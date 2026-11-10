@@ -1,0 +1,64 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #ac-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="acl" data-width="1600" data-height="1000">
+  <svg id="ac-lienzo" class="clip" data-start="0" data-duration="11" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Una lista de control de acceso (DACL) es una lista de entradas (ACE).
+  // Cada entrada que otorga control se convierte en una arista del grafo; las
+  // de solo lectura no dan control y no generan arista.
+  const d = new Diagrama(document.getElementById("ac-lienzo"));
+  const P = PALETA;
+  d.desde([
+    ["ac-obj", 1200, 290, { tipo: "User", r: 40, etiqueta: "objeto: jefa.ti", etqArriba: true }],
+    ["ac-p1", 260, 230, { tipo: "Group", r: 24, etiqueta: "HELPDESK" }],
+    ["ac-p2", 260, 500, { tipo: "Group", r: 24, etiqueta: "IT00161" }],
+    ["ac-p3", 260, 770, { tipo: "User", r: 24, etiqueta: "rrhh.lectura" }],
+  ], [
+    ["ac-a1", "ac-p1", "ac-obj", { etiqueta: "GENERIC_ALL", color: P.navy6, ancho: 4, etqLado: -22 }],
+    ["ac-a2", "ac-p2", "ac-obj", { etiqueta: "WRITE_DACL", color: P.navy6, ancho: 4, etqLado: 24 }],
+  ]);
+  const N = d.nodos, A = d.aristas;
+  const dacl = d.caja("ac-dacl", 980, 450, 440, 380, { relleno: P.fondo, borde: P.borde, texto: ["DACL de jefa.ti"], dyTexto: -125, clase: "etq-titulo" });
+  const filas = [
+    ["HELPDESK: control total", 590, P.verde],
+    ["IT00161: modificar permisos", 670, P.verde],
+    ["rrhh.lectura: solo lectura", 750, P.tenue],
+  ].map(([txt, y, color], i) => {
+    const f = d.caja(`ac-f${i}`, 1005, y - 30, 390, 56, { relleno: "#ffffff", borde: P.borde, texto: [txt], alinear: "izq", dyTexto: 8, clase: "etq-caja2" });
+    return { f, color };
+  });
+  const tachado = d.trazo("ac-x", "M300 770 L1000 750", { color: P.rojo, ancho: 3 });
+  const conector = d.trazo("ac-co", "M1200 340 L1200 450", { color: P.borde, ancho: 3 });
+  const no = svgTexto("sin arista: no otorga control", { x: 640, y: 735, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+
+  const tl = gsap.timeline({ paused: true });
+  Mov.aparecer(tl, N["ac-obj"], 0.2, { dur: 0.7 });
+  Mov.trazar(tl, conector, 0.5, { dur: 0.3 });
+  Mov.caja(tl, dacl.g, 0.6);
+  filas.forEach((r, i) => Mov.caja(tl, r.f.g, 1.0 + i * 0.12));
+  ["ac-p1", "ac-p2", "ac-p3"].forEach((id, i) => Mov.aparecer(tl, N[id], 1.6 + i * 0.15));
+  // Cada ACE que da control se enciende y produce su arista.
+  tl.to(filas[0].f.rect, { stroke: P.verde, strokeWidth: 4, duration: 0.3 }, 2.6);
+  Mov.trazar(tl, A["ac-a1"], 2.9, { dur: 0.8 });
+  tl.to(filas[1].f.rect, { stroke: P.verde, strokeWidth: 4, duration: 0.3 }, 4.0);
+  Mov.trazar(tl, A["ac-a2"], 4.3, { dur: 0.8 });
+  tl.to(filas[2].f.rect, { stroke: P.tenue, strokeWidth: 3, duration: 0.3 }, 5.4);
+  tl.fromTo(tachado.p, { opacity: 0 }, { opacity: 0.6, duration: 0.01 }, 5.6);
+  tl.fromTo(tachado.p, { strokeDashoffset: tachado.largo }, { strokeDashoffset: 0, duration: 0.5, ease: "power2.inOut" }, 5.6);
+  tl.set(tachado.p, { strokeDasharray: "8 10", strokeDashoffset: 0 }, 6.1);
+  Mov.mostrar(tl, no, 6.0);
+  // El objeto queda alcanzable desde los dos principales con control.
+  Mov.destello(tl, N["ac-obj"], 7.2, P.naranja);
+  Mov.colorArista(tl, A["ac-a1"], P.naranja, 7.3);
+  Mov.colorArista(tl, A["ac-a2"], P.naranja, 7.3);
+  window.__timelines["acl"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

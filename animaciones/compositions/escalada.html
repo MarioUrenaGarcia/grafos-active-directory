@@ -1,0 +1,62 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #es-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="escalada" data-width="1600" data-height="1000">
+  <svg id="es-lienzo" class="clip" data-start="0" data-duration="11" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Un tramo real del dataset: el camino de menor esfuerzo de CaronOstrye16
+  // hasta DOMAIN ADMINS, con la OU, la GPO y el grupo que rodean a sus objetos.
+  const d = new Diagrama(document.getElementById("es-lienzo"));
+  const P = PALETA;
+  const caron = d.nodo("es-caron", 210, 500, { tipo: "User", r: 22, etiqueta: "CaronOstrye16" });
+  const comp = d.nodo("es-comp", 600, 500, { tipo: "Computer", r: 22, etiqueta: "COMP00045" });
+  const ping = d.nodo("es-ping", 990, 500, { tipo: "User", r: 22, etiqueta: "PingFrankel165" });
+  const da = d.nodo("es-da", 1370, 500, { tipo: "objetivo", r: 34, etiqueta: "DOMAIN ADMINS" });
+  const ou = d.nodo("es-ou", 600, 200, { tipo: "OU", r: 18, etiqueta: "NV_COMPUTERS", etqArriba: true });
+  const gpo = d.nodo("es-gpo", 260, 200, { tipo: "GPO", r: 18, etiqueta: "GPO_13", etqArriba: true });
+  const du = d.nodo("es-du", 600, 820, { tipo: "Group", r: 20, etiqueta: "DOMAIN USERS" });
+
+  const e1 = d.arista("es-e1", "es-caron", "es-comp", { etiqueta: "EXECUTE_DCOM", ancho: 4, color: P.navy6 });
+  const e2 = d.arista("es-e2", "es-comp", "es-ping", { etiqueta: "HAS_SESSION", ancho: 4, color: P.navy6 });
+  const e3 = d.arista("es-e3", "es-ping", "es-da", { etiqueta: "MEMBER_OF", ancho: 4, color: P.navy6 });
+  const e4 = d.arista("es-e4", "es-ou", "es-comp", { etiqueta: "CONTAINS", etqLado: -22 });
+  const e5 = d.arista("es-e5", "es-gpo", "es-ou", { etiqueta: "GP_LINK", etqLado: -20 });
+  const e6 = d.arista("es-e6", "es-caron", "es-du", { etiqueta: "MEMBER_OF", curva: 60, etqLado: 24 });
+  const e7 = d.arista("es-e7", "es-ping", "es-du", { etiqueta: "MEMBER_OF", curva: -60, etqLado: -24 });
+
+  const tl = gsap.timeline({ paused: true });
+  // 1. El camino aparece objeto por objeto, cada acceso trazado de origen a destino.
+  Mov.aparecer(tl, caron, 0.3);
+  Mov.aparecer(tl, comp, 0.75);
+  Mov.trazar(tl, e1, 1.0);
+  Mov.aparecer(tl, ping, 1.55);
+  Mov.trazar(tl, e2, 1.8);
+  Mov.aparecer(tl, da, 2.35, { dur: 0.7 });
+  Mov.trazar(tl, e3, 2.6);
+  // 2. El contexto: contencion y politicas (estructurales) y pertenencia a grupos.
+  Mov.aparecer(tl, ou, 3.6);
+  Mov.trazar(tl, e4, 3.85);
+  Mov.aparecer(tl, gpo, 4.25);
+  Mov.trazar(tl, e5, 4.5);
+  tl.set([e4.p, e5.p], { strokeDasharray: "9 9", strokeDashoffset: 0 }, 5.2);
+  Mov.aparecer(tl, du, 5.0);
+  Mov.trazar(tl, e6, 5.25, { dur: 0.7 });
+  Mov.trazar(tl, e7, 5.45, { dur: 0.7 });
+  // 3. La ruta de compromiso se enciende de origen a objetivo.
+  Mov.destello(tl, caron, 6.6, P.naranja);
+  Mov.colorArista(tl, e1, P.naranja, 6.8, { ancho: 6 });
+  Mov.destello(tl, comp, 7.1, P.naranja);
+  Mov.colorArista(tl, e2, P.naranja, 7.25, { ancho: 6 });
+  Mov.destello(tl, ping, 7.55, P.naranja);
+  Mov.colorArista(tl, e3, P.naranja, 7.7, { ancho: 6 });
+  Mov.destello(tl, da, 8.05, P.rojo);
+  window.__timelines["escalada"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

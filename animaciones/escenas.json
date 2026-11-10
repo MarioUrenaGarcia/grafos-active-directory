@@ -1,0 +1,117 @@
+[
+ {
+  "escena": "logo",
+  "inicio": 0.0,
+  "duracion": 6.0
+ },
+ {
+  "escena": "dominio",
+  "inicio": 6.0,
+  "duracion": 10.0
+ },
+ {
+  "escena": "kerberos",
+  "inicio": 16.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "sesion",
+  "inicio": 27.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "anidados",
+  "inicio": 38.0,
+  "duracion": 10.0
+ },
+ {
+  "escena": "acl",
+  "inicio": 48.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "escalada",
+  "inicio": 59.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "ciclo",
+  "inicio": 70.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "defensor",
+  "inicio": 83.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "adyacencia",
+  "inicio": 96.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "bfs",
+  "inicio": 107.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "inverso",
+  "inicio": 120.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "dijkstra",
+  "inicio": 131.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "warshall",
+  "inicio": 144.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "tarjan",
+  "inicio": 157.0,
+  "duracion": 12.0
+ },
+ {
+  "escena": "brandes",
+  "inicio": 169.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "cortevertice",
+  "inicio": 180.0,
+  "duracion": 12.0
+ },
+ {
+  "escena": "redflujo",
+  "inicio": 192.0,
+  "duracion": 11.0
+ },
+ {
+  "escena": "aumento",
+  "inicio": 203.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "corteminimo",
+  "inicio": 216.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "arquitectura",
+  "inicio": 229.0,
+  "duracion": 12.0
+ },
+ {
+  "escena": "web",
+  "inicio": 241.0,
+  "duracion": 13.0
+ },
+ {
+  "escena": "visor",
+  "inicio": 254.0,
+  "duracion": 11.0
+ }
+]

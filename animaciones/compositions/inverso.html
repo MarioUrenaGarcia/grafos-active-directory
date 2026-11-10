@@ -1,0 +1,58 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #in-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="inverso" data-width="1600" data-height="1000">
+  <svg id="in-lienzo" class="clip" data-start="0" data-duration="11" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Para saber quien puede llegar al objetivo se invierte el sentido de cada
+  // arista y se hace un BFS desde el objetivo. Lo que alcanza ese BFS es
+  // exactamente el conjunto de objetos con al menos una ruta hacia el.
+  const svg = document.getElementById("in-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  const gris = "#c9d1dd";
+  const pos = { p: [220, 230], q: [220, 480], r: [220, 730], m1: [580, 330], m2: [580, 640],
+                x: [930, 250], y: [930, 720], T: [1300, 480], k: [1300, 850], n: [580, 880] };
+  d.desde(Object.entries(pos).map(([k, [x, y]]) => [`in-${k}`, x, y,
+    { color: k === "T" ? P.rojo : gris, r: k === "T" ? 40 : 24, etiqueta: k === "T" ? "objetivo" : null }]));
+  const aristas = [["p", "m1"], ["q", "m1"], ["q", "m2"], ["r", "m2"], ["m1", "x"], ["m2", "y"], ["x", "T"], ["y", "T"], ["T", "k"], ["n", "k"]];
+  aristas.forEach(([a, b]) => d.arista(`in-${a}${b}`, `in-${a}`, `in-${b}`, { ancho: 3, color: P.navy6 }));
+  // Las aristas invertidas, en azul, de cada destino hacia su origen.
+  aristas.forEach(([a, b]) => d.arista(`in-r${a}${b}`, `in-${b}`, `in-${a}`, { ancho: 4, color: P.azul, curva: 26 }));
+  const N = k => d.nodos[`in-${k}`];
+  const rotulo1 = svgTexto("grafo original", { x: 800, y: 70, "text-anchor": "middle", class: "etq-zona", opacity: 0 }, d.fondo);
+  const rotulo2 = svgTexto("aristas invertidas: BFS desde el objetivo", { x: 800, y: 70, "text-anchor": "middle", class: "etq-zona", opacity: 0 }, d.fondo);
+  const res = svgTexto("7 objetos alcanzan el objetivo; 2 no", { x: 800, y: 965, "text-anchor": "middle", class: "etq", opacity: 0 }, d.capaEncima);
+
+  const tl = gsap.timeline({ paused: true });
+  Mov.mostrar(tl, rotulo1, 0.2);
+  Object.keys(pos).forEach((k, i) => Mov.aparecer(tl, N(k), 0.3 + i * 0.06, { dur: 0.4 }));
+  aristas.forEach(([a, b], i) => Mov.trazar(tl, d.aristas[`in-${a}${b}`], 0.8 + i * 0.1, { dur: 0.5 }));
+  // Se invierte el sentido: las originales se atenuan y aparecen las inversas.
+  Mov.ocultar(tl, rotulo1, 3.0);
+  Mov.mostrar(tl, rotulo2, 3.2);
+  aristas.forEach(([a, b], i) => {
+    const o = d.aristas[`in-${a}${b}`];
+    tl.to([o.p, o.flecha], { opacity: 0.15, duration: 0.4 }, 3.1);
+    Mov.trazar(tl, d.aristas[`in-r${a}${b}`], 3.4 + i * 0.08, { dur: 0.5 });
+  });
+  // BFS desde el objetivo sobre las aristas invertidas, nivel por nivel.
+  Mov.destello(tl, N("T"), 5.0, P.rojo);
+  const nivelesBfs = [["x", "y"], ["m1", "m2"], ["p", "q", "r"]];
+  nivelesBfs.forEach((nivel, i) => nivel.forEach((k, j) => {
+    tl.to(N(k).c, { fill: P.naranja, duration: 0.3 }, 5.5 + i * 0.8 + j * 0.08);
+    Mov.destello(tl, N(k), 5.5 + i * 0.8 + j * 0.08, P.naranja);
+  }));
+  // k y n no se alcanzan: el objetivo controla a k, pero k no llega al objetivo.
+  tl.to([N("k").c, N("n").c], { stroke: P.tenue, strokeWidth: 3, duration: 0.3 }, 8.0);
+  Mov.mostrar(tl, res, 8.2);
+  window.__timelines["inverso"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

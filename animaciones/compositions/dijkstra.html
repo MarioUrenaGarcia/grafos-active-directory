@@ -1,0 +1,86 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #dj-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="dijkstra" data-width="1600" data-height="1000">
+  <svg id="dj-lienzo" class="clip" data-start="0" data-duration="13" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Dijkstra con los pesos del proyecto: el camino de un salto por una sesion
+  // (peso 4) pierde frente a dos pertenencias a grupo (peso 1 + 1 = 2). El
+  // monticulo entrega siempre el nodo de menor distancia acumulada.
+  const svg = document.getElementById("dj-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  const INF = "∞";
+  d.desde([
+    ["dj-O", 200, 420, { tipo: "User", r: 30, etiqueta: "origen" }],
+    ["dj-G", 660, 180, { tipo: "Group", r: 28, etiqueta: "G" }],
+    ["dj-C", 660, 660, { tipo: "Computer", r: 28, etiqueta: "C" }],
+    ["dj-T", 1140, 420, { tipo: "objetivo", r: 38, etiqueta: "objetivo" }],
+  ], [
+    ["dj-OT", "dj-O", "dj-T", { etiqueta: "HAS_SESSION · 4", ancho: 4, color: P.navy6, etqLado: 22 }],
+    ["dj-OG", "dj-O", "dj-G", { etiqueta: "MEMBER_OF · 1", ancho: 4, color: P.navy6, etqLado: -22 }],
+    ["dj-GT", "dj-G", "dj-T", { etiqueta: "MEMBER_OF · 1", ancho: 4, color: P.navy6, etqLado: -22 }],
+    ["dj-OC", "dj-O", "dj-C", { etiqueta: "CAN_RDP · 3", ancho: 4, color: P.navy6, etqLado: 22 }],
+    ["dj-CT", "dj-C", "dj-T", { etiqueta: "ADMIN_TO · 1", ancho: 4, color: P.navy6, etqLado: 22 }],
+  ]);
+  const N = k => d.nodos[`dj-${k}`], A = k => d.aristas[`dj-${k}`];
+  // Insignias de distancia: cada valor es un texto propio que aparece en su turno.
+  const insignia = (k, valores) => {
+    const n = N(k);
+    const g = svgEl("g", {}, d.capaEncima);
+    svgEl("rect", { x: n.x + n.r - 6, y: n.y - n.r - 40, width: 76, height: 40, rx: 20, fill: P.navy }, g);
+    return valores.map(v => {
+      const t = svgTexto(String(v), { x: n.x + n.r + 32, y: n.y - n.r - 12, "text-anchor": "middle", class: "etq-caja", opacity: 0 }, g);
+      t.style.fill = "#ffffff";
+      return t;
+    }).concat([g]);
+  };
+  const dO = insignia("O", [0]), dG = insignia("G", [INF, 1]), dC = insignia("C", [INF, 3]), dT = insignia("T", [INF, 4, 2]);
+  [dO, dG, dC, dT].forEach(v => v[v.length - 1].setAttribute("opacity", 0));
+  // Estados del monticulo (pares distancia, nodo), del frente al final.
+  const estados = [
+    "montículo: (0, origen)",
+    "montículo: (1, G)  (3, C)  (4, objetivo)",
+    "montículo: (2, objetivo)  (3, C)  (4, objetivo)",
+    "sale (2, objetivo): camino mínimo con peso 2",
+  ].map(txt => {
+    const g = d.caja(`dj-m${txt.length}`, 220, 840, 1160, 86, { relleno: P.fondo, borde: P.borde, texto: [txt], clase: "etq-mono", dyTexto: 8 });
+    return g;
+  });
+
+  const tl = gsap.timeline({ paused: true });
+  ["O", "G", "C", "T"].forEach((k, i) => Mov.aparecer(tl, N(k), 0.2 + i * 0.15));
+  ["OT", "OG", "GT", "OC", "CT"].forEach((k, i) => Mov.trazar(tl, A(k), 0.7 + i * 0.15, { dur: 0.5 }));
+  const ver = (v, i, t) => { Mov.mostrar(tl, v[i], t, 0.25); if (i > 0) Mov.ocultar(tl, v[i - 1], t, 0.15); };
+  [dO, dG, dC, dT].forEach((v, i) => { Mov.mostrar(tl, v[v.length - 1], 1.8 + i * 0.1); ver(v, 0, 1.8 + i * 0.1); });
+  Mov.caja(tl, estados[0].g, 2.2);
+  // Paso 1: sale el origen (distancia 0) y se relajan sus tres aristas.
+  Mov.destello(tl, N("O"), 3.0, P.naranja);
+  tl.to(N("O").c, { stroke: P.naranja, strokeWidth: 6, duration: 0.3 }, 3.0);
+  [["OG", dG, 1], ["OC", dC, 1], ["OT", dT, 1]].forEach(([k, v, i], j) => {
+    Mov.colorArista(tl, A(k), P.azul, 3.3 + j * 0.3, { ancho: 5 });
+    ver(v, i, 3.5 + j * 0.3);
+  });
+  Mov.ocultar(tl, estados[0].g, 4.6); Mov.caja(tl, estados[1].g, 4.75);
+  // Paso 2: sale G (distancia 1); por G el objetivo queda a 1 + 1 = 2 < 4.
+  Mov.destello(tl, N("G"), 5.8, P.naranja);
+  tl.to(N("G").c, { stroke: P.naranja, strokeWidth: 6, duration: 0.3 }, 5.8);
+  Mov.colorArista(tl, A("GT"), P.azul, 6.2, { ancho: 5 });
+  ver(dT, 2, 6.5);
+  tl.to([A("OT").p, A("OT").flecha], { opacity: 0.25, duration: 0.4 }, 6.6);
+  Mov.ocultar(tl, estados[1].g, 7.0); Mov.caja(tl, estados[2].g, 7.15);
+  // Paso 3: sale el objetivo con distancia 2: fin. El camino minimo se enciende.
+  Mov.destello(tl, N("T"), 8.4, P.rojo);
+  Mov.ocultar(tl, estados[2].g, 8.6); Mov.caja(tl, estados[3].g, 8.75);
+  Mov.colorArista(tl, A("OG"), P.naranja, 9.1, { ancho: 7 });
+  Mov.colorArista(tl, A("GT"), P.naranja, 9.4, { ancho: 7 });
+  window.__timelines["dijkstra"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

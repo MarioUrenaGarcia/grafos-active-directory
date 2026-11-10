@@ -1,0 +1,69 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #do-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="dominio" data-width="1600" data-height="1000">
+  <svg id="do-lienzo" class="clip" data-start="0" data-duration="10" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Un dominio de Active Directory: el controlador de dominio en el centro y
+  // los objetos del directorio agrupados por tipo, con sus conteos reales.
+  const svg = document.getElementById("do-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  const anillo = svgEl("circle", { cx: 800, cy: 500, r: 400, fill: "none", stroke: P.borde, "stroke-width": 3, "stroke-dasharray": "10 12", opacity: 0 }, d.fondo);
+  const nombreDom = svgTexto("TestCompany.Local", { x: 800, y: 75, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.fondo);
+  const dc = d.caja("do-dc", 690, 440, 220, 120, { relleno: P.navy, borde: P.navy, texto: ["Controlador", "de dominio"], tinta: "#ffffff", clase: "etq-caja", clase2: "etq-caja" });
+  const grupos = [
+    { id: "us", tipo: "User", nombre: "300 usuarios", ang: -150 },
+    { id: "eq", tipo: "Computer", nombre: "301 equipos", ang: -30 },
+    { id: "gr", tipo: "Group", nombre: "308 grupos", ang: 30 },
+    { id: "ou", tipo: "OU", nombre: "21 OU", ang: 90 },
+    { id: "gp", tipo: "GPO", nombre: "22 GPO", ang: 150 },
+  ];
+  const enlaces = {};
+  const tl = gsap.timeline({ paused: true });
+  Mov.mostrar(tl, anillo, 0.2, 0.6);
+  Mov.mostrar(tl, nombreDom, 0.4, 0.5);
+  Mov.caja(tl, dc.g, 0.6);
+  grupos.forEach((gr, k) => {
+    const a = gr.ang * Math.PI / 180, cx = 800 + Math.cos(a) * 300, cy = 500 + Math.sin(a) * 300;
+    const t0 = 1.4 + k * 0.55;
+    const enlace = d.trazo(`do-l-${gr.id}`, `M${800 + Math.cos(a) * 120} ${500 + Math.sin(a) * 80} L${cx - Math.cos(a) * 60} ${cy - Math.sin(a) * 60}`, { color: P.arista, ancho: 3 });
+    enlaces[gr.id] = enlace;
+    Mov.trazar(tl, enlace, t0, { dur: 0.45 });
+    // Seis miembros representativos en una rejilla de 3 x 2 junto al extremo del enlace.
+    for (let j = 0; j < 6; j++) {
+      const n = d.nodo(`do-${gr.id}-${j}`, cx + (j % 3 - 1) * 40, cy + (Math.floor(j / 3) - 0.5) * 40, { tipo: gr.tipo, r: 14 });
+      Mov.aparecer(tl, n, t0 + 0.3 + j * 0.05, { dur: 0.45 });
+    }
+    const derecha = Math.cos(a) > 0.3, izquierda = Math.cos(a) < -0.3;
+    const etq = svgTexto(gr.nombre, {
+      x: cx + (derecha ? 80 : izquierda ? -80 : 0), y: cy + (derecha || izquierda ? 9 : 75),
+      "text-anchor": derecha ? "start" : izquierda ? "end" : "middle", class: "etq", opacity: 0,
+    }, d.capaEncima);
+    Mov.mostrar(tl, etq, t0 + 0.55, 0.3);
+  });
+  // Autenticacion: las fichas viajan de los usuarios y equipos al controlador.
+  const viajes = [["us", 5.0], ["eq", 5.35], ["us", 5.9], ["gr", 6.3]];
+  viajes.forEach(([id, t], i) => {
+    const ficha = d.ficha(`do-f-${i}`, { color: P.ambar, r: 10 });
+    const camino = enlaces[id].p;
+    // El trazo va del controlador hacia el grupo; la ficha lo recorre al reves.
+    const inverso = svgEl("path", { d: invertir(camino.getAttribute("d")), fill: "none", stroke: "none" }, d.fondo);
+    Mov.viajar(tl, ficha, inverso, t, 0.8);
+  });
+  Mov.destello(tl, { halo: svgEl("circle", { cx: 800, cy: 500, r: 0, fill: P.azul, opacity: 0 }, d.fondo), r: 90 }, 5.8, P.azul);
+  window.__timelines["dominio"] = tl;
+  tl.seek(0);
+
+  function invertir(dd) {
+    const m = dd.match(/M([\d.-]+) ([\d.-]+) L([\d.-]+) ([\d.-]+)/);
+    return `M${m[3]} ${m[4]} L${m[1]} ${m[2]}`;
+  }
+})();
+</script>
+</template>

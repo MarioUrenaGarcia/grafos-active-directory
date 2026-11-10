@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Salidas que genera la linea de comandos en la raiz (la web usa las de docs/)
+/reporte.html
+/visor.html
+
+# Artefactos locales de HyperFrames al previsualizar o renderizar
+animaciones/.hyperframes/
+animaciones/node_modules/
+animaciones/clips/
+animaciones/renders/
+animaciones/snaps/

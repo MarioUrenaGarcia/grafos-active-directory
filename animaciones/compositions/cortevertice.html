@@ -1,0 +1,76 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #cv-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="cortevertice" data-width="1600" data-height="1000">
+  <svg id="cv-lienzo" class="clip" data-start="0" data-duration="12" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Vertices de corte del caso real: de PiedadFlatley255 a ENTERPRISE DOMAIN
+  // CONTROLLERS. Se quita cada candidato y se vuelve a recorrer: si el objetivo
+  // deja de ser alcanzable, ese objeto es un cuello de botella de la ruta.
+  const svg = document.getElementById("cv-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  d.desde([
+    ["cv-pi", 150, 480, { tipo: "User", r: 30, etiqueta: "PiedadFlatley255" }],
+    ["cv-du", 470, 150, { tipo: "Group", r: 22, etiqueta: "DOMAIN USERS" }],
+    ["cv-hr", 470, 330, { tipo: "Group", r: 22, etiqueta: "HR00037" }],
+    ["cv-c1", 470, 790, { tipo: "Computer", r: 22, etiqueta: "COMP00236" }],
+    ["cv-da", 640, 480, { tipo: "hv", r: 34, etiqueta: "DOMAIN ADMINS" }],
+    ["cv-c2", 820, 820, { tipo: "Computer", r: 20, etiqueta: "COMP00001" }],
+    ["cv-c3", 1000, 220, { tipo: "Computer", r: 20, etiqueta: "COMP00012" }],
+    ["cv-fl", 1020, 480, { tipo: "Computer", r: 28, etiqueta: "FLLABDC" }],
+    ["cv-edc", 1400, 480, { tipo: "objetivo", r: 38, etiqueta: "ENTERPRISE DOMAIN CONTROLLERS", etqArriba: true }],
+  ], [
+    ["cv-1", "cv-pi", "cv-du", {}], ["cv-2", "cv-pi", "cv-hr", {}], ["cv-3", "cv-pi", "cv-c1", { etiqueta: "EXECUTE_DCOM" }],
+    ["cv-4", "cv-pi", "cv-da", { etiqueta: "MEMBER_OF", ancho: 4, color: P.navy6 }],
+    ["cv-5", "cv-da", "cv-c2", {}], ["cv-6", "cv-da", "cv-c3", {}],
+    ["cv-7", "cv-da", "cv-fl", { etiqueta: "ADMIN_TO", ancho: 4, color: P.navy6 }],
+    ["cv-8", "cv-fl", "cv-edc", { etiqueta: "MEMBER_OF", ancho: 4, color: P.navy6 }],
+  ]);
+  const N = k => d.nodos[`cv-${k}`], A = d.aristas;
+  const veredicto = (txt, color) => {
+    const t = svgTexto(txt, { x: 800, y: 950, "text-anchor": "middle", class: "etq", opacity: 0 }, d.capaEncima);
+    t.style.fill = color;
+    return t;
+  };
+  const pruebas = [
+    { k: "hr", aristas: ["cv-2"], ok: true, txt: "sin HR00037 el objetivo sigue alcanzable: no es de corte" },
+    { k: "da", aristas: ["cv-4", "cv-5", "cv-6", "cv-7"], ok: false, txt: "sin DOMAIN ADMINS no hay ruta: es vértice de corte" },
+    { k: "fl", aristas: ["cv-7", "cv-8"], ok: false, txt: "sin FLLABDC no hay ruta: es vértice de corte" },
+  ].map(p => Object.assign(p, { v: veredicto(p.txt, p.ok ? P.tenue : P.rojo) }));
+
+  const tl = gsap.timeline({ paused: true });
+  ["pi", "du", "hr", "c1", "da", "c2", "c3", "fl", "edc"].forEach((k, i) => Mov.aparecer(tl, N(k), 0.2 + i * 0.08, { dur: 0.45 }));
+  Object.values(A).forEach((a, i) => Mov.trazar(tl, a, 0.8 + i * 0.1, { dur: 0.45 }));
+  // La ruta de Piedad al objetivo.
+  ["cv-4", "cv-7", "cv-8"].forEach((k, i) => Mov.colorArista(tl, A[k], P.naranja, 2.2 + i * 0.25));
+  let t = 3.3;
+  pruebas.forEach(p => {
+    // Quitar el candidato: se atenua con sus aristas.
+    tl.to(N(p.k).g, { opacity: 0.15, duration: 0.3 }, t);
+    p.aristas.forEach(k => tl.to(A[k].g, { opacity: 0.12, duration: 0.3 }, t));
+    tl.to(N("edc").c, { fill: p.ok ? P.rojo : "#e3e8ef", duration: 0.3 }, t + 0.4);
+    Mov.mostrar(tl, p.v, t + 0.4);
+    // Restaurar y, si es de corte, marcarlo con un anillo rojo.
+    tl.to(N(p.k).g, { opacity: 1, duration: 0.3 }, t + 1.6);
+    p.aristas.forEach(k => tl.to(A[k].g, { opacity: 1, duration: 0.3 }, t + 1.6));
+    tl.to(N("edc").c, { fill: P.rojo, duration: 0.3 }, t + 1.6);
+    Mov.ocultar(tl, p.v, t + 1.6);
+    if (!p.ok) {
+      tl.to(N(p.k).c, { stroke: P.rojo, strokeWidth: 7, duration: 0.3 }, t + 1.7);
+      Mov.destello(tl, N(p.k), t + 1.7, P.rojo);
+    }
+    t += 2.2;
+  });
+  const final = veredicto("vértices de corte de la ruta: DOMAIN ADMINS y FLLABDC", P.navy);
+  Mov.mostrar(tl, final, t);
+  window.__timelines["cortevertice"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

@@ -1,0 +1,58 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #an-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="anidados" data-width="1600" data-height="1000">
+  <svg id="an-lienzo" class="clip" data-start="0" data-duration="10" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Grupos anidados: la pertenencia es transitiva, asi que el usuario recibe
+  // los permisos del ultimo grupo de la cadena aunque no sea miembro directo.
+  const d = new Diagrama(document.getElementById("an-lienzo"));
+  const P = PALETA;
+  d.desde([
+    ["an-u", 170, 520, { tipo: "User", r: 26, etiqueta: "ana" }],
+    ["an-g1", 480, 520, { tipo: "Group", r: 24, etiqueta: "SOPORTE" }],
+    ["an-g2", 790, 520, { tipo: "Group", r: 24, etiqueta: "IT" }],
+    ["an-g3", 1100, 520, { tipo: "Group", r: 26, etiqueta: "ADMINS SERVIDORES" }],
+    ["an-c1", 1420, 300, { tipo: "Computer", r: 20, etiqueta: "SRV-01" }],
+    ["an-c2", 1440, 520, { tipo: "Computer", r: 20, etiqueta: "SRV-02" }],
+    ["an-c3", 1420, 740, { tipo: "Computer", r: 20, etiqueta: "SRV-03" }],
+  ], [
+    ["an-e1", "an-u", "an-g1", { etiqueta: "MEMBER_OF", ancho: 4, color: P.navy6 }],
+    ["an-e2", "an-g1", "an-g2", { etiqueta: "MEMBER_OF", ancho: 4, color: P.navy6 }],
+    ["an-e3", "an-g2", "an-g3", { etiqueta: "MEMBER_OF", ancho: 4, color: P.navy6 }],
+    ["an-a1", "an-g3", "an-c1", { etiqueta: "ADMIN_TO", etqLado: -20 }],
+    ["an-a2", "an-g3", "an-c2", { etiqueta: "ADMIN_TO" }],
+    ["an-a3", "an-g3", "an-c3", { etiqueta: "ADMIN_TO", etqLado: 20 }],
+    // Pertenencia efectiva: la cerradura transitiva agrega las aristas implicitas.
+    ["an-x2", "an-u", "an-g2", { curva: 150, color: P.ambar, ancho: 3, sinFlecha: false }],
+    ["an-x3", "an-u", "an-g3", { curva: 260, color: P.ambar, ancho: 3 }],
+  ]);
+  const N = d.nodos, A = d.aristas;
+  const nota = svgTexto("pertenencia efectiva (cerradura transitiva)", { x: 600, y: 760, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+  nota.style.fill = "#b07a0d";
+
+  const tl = gsap.timeline({ paused: true });
+  ["an-u", "an-g1", "an-g2", "an-g3"].forEach((id, i) => Mov.aparecer(tl, N[id], 0.3 + i * 0.35));
+  ["an-e1", "an-e2", "an-e3"].forEach((id, i) => Mov.trazar(tl, A[id], 1.1 + i * 0.45, { dur: 0.5 }));
+  ["an-c1", "an-c2", "an-c3"].forEach((id, i) => Mov.aparecer(tl, N[id], 2.6 + i * 0.12));
+  ["an-a1", "an-a2", "an-a3"].forEach((id, i) => Mov.trazar(tl, A[id], 2.8 + i * 0.12, { dur: 0.5 }));
+  // Los permisos fluyen hacia atras: la cadena se enciende hasta el usuario.
+  Mov.colorArista(tl, A["an-e3"], P.naranja, 4.2);
+  Mov.colorArista(tl, A["an-e2"], P.naranja, 4.5);
+  Mov.colorArista(tl, A["an-e1"], P.naranja, 4.8);
+  Mov.destello(tl, N["an-u"], 5.15, P.naranja);
+  // La cerradura transitiva hace explicitas las pertenencias implicitas.
+  Mov.trazar(tl, A["an-x2"], 6.0, { dur: 0.7 });
+  Mov.trazar(tl, A["an-x3"], 6.4, { dur: 0.8 });
+  Mov.mostrar(tl, nota, 6.9);
+  ["an-c1", "an-c2", "an-c3"].forEach((id, i) => Mov.destello(tl, N[id], 7.6 + i * 0.1, P.naranja));
+  window.__timelines["anidados"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

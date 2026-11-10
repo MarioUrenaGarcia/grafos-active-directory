@@ -1,0 +1,61 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #vi-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="visor" data-width="1600" data-height="1000">
+  <svg id="vi-lienzo" class="clip" data-start="0" data-duration="11" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // El visor offline: visor.py junta los datos compactos del grafo, la misma
+  // pagina de la aplicacion y un backend en JavaScript en un solo HTML. Dentro
+  // del navegador, la pagina consulta ese backend sin red, y sus respuestas
+  // coinciden con las de Python en todas las consultas comparadas.
+  const svg = document.getElementById("vi-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  const piezas = [
+    ["vi-p1", 120, ["datos del grafo", "JSON compacto"], P.azul],
+    ["vi-p2", 330, ["página de", "interfaz_web.py"], P.navy],
+    ["vi-p3", 540, ["backend en", "JavaScript"], P.morado],
+  ].map(([id, y, txt, color]) => d.caja(id, 80, y, 330, 130, { relleno: color, borde: color, texto: txt, tinta: "#fff" }));
+  const html = d.caja("vi-html", 600, 300, 300, 200, { relleno: "#ffffff", borde: P.naranja, grosor: 5, texto: ["visor.html", "un solo archivo"], clase: "etq-titulo", clase2: "etq-caja2" });
+  const nav = d.caja("vi-nav", 1060, 120, 460, 450, { relleno: P.fondo, borde: P.borde, texto: ["navegador sin red"], clase: "etq-titulo", dyTexto: -185 });
+  const ent = piezas.map((p, i) => d.trazo(`vi-e${i}`, `M410 ${p.cy} C500 ${p.cy} 520 400 600 400`, { color: P.borde, ancho: 3 }));
+  const sal = d.trazo("vi-s", "M900 400 C960 400 1000 360 1060 345", { color: P.borde, ancho: 3 });
+  const pag = d.caja("vi-pag", 1100, 220, 180, 90, { relleno: "#ffffff", borde: P.navy, texto: ["página"], dyTexto: 8 });
+  const back = d.caja("vi-back", 1300, 400, 190, 90, { relleno: "#ffffff", borde: P.morado, texto: ["backendLocal"], clase: "etq-mono", dyTexto: 8 });
+  const pide = d.trazo("vi-pide", "M1240 310 C1260 360 1300 380 1330 400", { color: P.borde, ancho: 3 });
+  const responde = d.trazo("vi-resp", "M1360 400 C1340 330 1310 290 1280 270", { color: P.borde, ancho: 3 });
+  // Comparacion contra Python.
+  const cmp = d.caja("vi-cmp", 260, 700, 1080, 200, { relleno: "#ffffff", borde: P.verde, grosor: 4, texto: ["Python (trazas.py)  =  JavaScript (visor)"], clase: "etq-titulo", dyTexto: -45 });
+  const cuentas = [0, 450, 900, 1350, 1789].map(v => {
+    const t = svgTexto(`${v} consultas iguales`, { x: 800, y: 850, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.capaEncima);
+    t.style.fontSize = "52px"; t.style.fill = P.verde;
+    return t;
+  });
+
+  const tl = gsap.timeline({ paused: true });
+  piezas.forEach((p, i) => Mov.caja(tl, p.g, 0.2 + i * 0.2));
+  Mov.caja(tl, html.g, 1.0);
+  ent.forEach((t, i) => { Mov.trazar(tl, t, 1.2 + i * 0.12, { dur: 0.5 }); });
+  piezas.forEach((p, i) => Mov.viajar(tl, d.ficha(`vi-f${i}`, { r: 12, color: "#ffd37a" }), ent[i].p, 1.6 + i * 0.25, 0.8));
+  Mov.destello(tl, { halo: svgEl("circle", { cx: 750, cy: 400, r: 0, opacity: 0 }, d.fondo), r: 110 }, 2.9, P.naranja);
+  Mov.caja(tl, nav.g, 3.3);
+  Mov.trazar(tl, sal, 3.6, { dur: 0.5 });
+  Mov.caja(tl, pag.g, 4.0); Mov.caja(tl, back.g, 4.2);
+  Mov.trazar(tl, pide, 4.5, { dur: 0.4 }); Mov.trazar(tl, responde, 4.6, { dur: 0.4 });
+  // Varias consultas a /api/... resueltas dentro del navegador.
+  [0, 1, 2].forEach(k => {
+    Mov.viajar(tl, d.ficha(`vi-q${k}`, { r: 10, color: "#ffd37a" }), pide.p, 5.0 + k * 0.7, 0.45);
+    Mov.viajar(tl, d.ficha(`vi-a${k}`, { r: 10, color: P.morado }), responde.p, 5.35 + k * 0.7, 0.45);
+  });
+  Mov.caja(tl, cmp.g, 7.2);
+  cuentas.forEach((c, i) => { Mov.mostrar(tl, c, 7.6 + i * 0.35, 0.2); if (i < cuentas.length - 1) Mov.ocultar(tl, c, 7.9 + i * 0.35, 0.12); });
+  window.__timelines["visor"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

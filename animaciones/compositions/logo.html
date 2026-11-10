@@ -1,0 +1,43 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #lg-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="logo" data-width="1600" data-height="1000">
+  <svg id="lg-lienzo" class="clip" data-start="0" data-duration="6" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // El logo se arma pieza por pieza: los objetos, sus accesos hacia el
+  // objetivo y el corte minimo que los interrumpe.
+  const svg = document.getElementById("lg-lienzo");
+  const P = PALETA;
+  const g = svgEl("g", { transform: "translate(512 212) scale(12)" }, svg);
+  const fondo = svgEl("rect", { width: 48, height: 48, rx: 12, fill: P.azul, opacity: 0 }, g);
+  const tramos = ["M13 14l4.6 2.09", "M21.6 17.91l6.1 2.79", "M11 24h7.8", "M23.2 24h3.8",
+                  "M13 34l7.17-3.26", "M24.17 28.92l3.53-1.62"].map(d => {
+    const p = svgEl("path", { d, fill: "none", stroke: "#fff", "stroke-width": 2.4, "stroke-linecap": "round" }, g);
+    const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.style.opacity = 0;
+    return { p, L };
+  });
+  const corte = svgEl("path", { d: "M18.6 12l4.8 24", stroke: P.ambar, "stroke-width": 3.2, "stroke-linecap": "round", fill: "none" }, g);
+  const Lc = corte.getTotalLength(); corte.style.strokeDasharray = Lc; corte.style.strokeDashoffset = Lc; corte.style.opacity = 0;
+  const nodos = [[13, 14], [11, 24], [13, 34]].map(([cx, cy]) => svgEl("circle", { cx, cy, r: 0, fill: "#fff" }, g));
+  const diana = svgEl("circle", { cx: 35, cy: 24, r: 0, fill: P.rojo, stroke: "#fff", "stroke-width": 2.5 }, g);
+  const centro = svgEl("circle", { cx: 35, cy: 24, r: 0, fill: "#fff" }, g);
+
+  const tl = gsap.timeline({ paused: true });
+  tl.fromTo(fondo, { opacity: 0, scale: 0.8, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.7, ease: "expo.out" }, 0.2);
+  nodos.forEach((c, i) => tl.fromTo(c, { attr: { r: 0 } }, { attr: { r: 3 }, duration: 0.5, ease: "back.out(2)" }, 0.7 + i * 0.12));
+  tramos.forEach((t, i) => tl.set(t.p, { opacity: 1 }, 1.15 + Math.floor(i / 2) * 0.1 + (i % 2) * 0.3));
+  tramos.forEach((t, i) => tl.fromTo(t.p, { strokeDashoffset: t.L }, { strokeDashoffset: 0, duration: 0.45, ease: "power2.inOut" }, 1.15 + Math.floor(i / 2) * 0.1 + (i % 2) * 0.3));
+  tl.fromTo(diana, { attr: { r: 0 } }, { attr: { r: 6.5 }, duration: 0.6, ease: "back.out(1.8)" }, 1.8);
+  tl.fromTo(centro, { attr: { r: 0 } }, { attr: { r: 2 }, duration: 0.4, ease: "back.out(2)" }, 2.05);
+  tl.set(corte, { opacity: 1 }, 2.5);
+  tl.fromTo(corte, { strokeDashoffset: Lc }, { strokeDashoffset: 0, duration: 0.5, ease: "power3.inOut" }, 2.5);
+  window.__timelines["logo"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

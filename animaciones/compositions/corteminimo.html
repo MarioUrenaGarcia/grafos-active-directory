@@ -1,0 +1,64 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #cm-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="corteminimo" data-width="1600" data-height="1000">
+  <svg id="cm-lienzo" class="clip" data-start="0" data-duration="13" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // El corte minimo sale de la red residual: los nodos que S todavia alcanza
+  // forman su lado; los accesos que cruzan hacia el otro lado son el corte.
+  // Su tamanio es igual al flujo maximo, y hay tantas rutas disjuntas en
+  // aristas como accesos en el corte (Menger).
+  const svg = document.getElementById("cm-lienzo");
+  const d = new Diagrama(svg);
+  const R = RED_FLUJO;
+  const lado = svgEl("path", { d: "M40 110 L740 110 L740 650 L430 650 L430 905 L40 905 Z", fill: "#e8eef9", stroke: "#2e5aac", "stroke-width": 3, "stroke-dasharray": "12 10", opacity: 0 }, d.fondo);
+  const rotLado = svgTexto("lado de S en la red residual", { x: 390, y: 90, "text-anchor": "middle", class: "etq-zona", opacity: 0 }, d.fondo);
+  const A = construirRed(d, "cm");
+  const N = id => d.nodos[`cm-${id}`];
+  const igualdad = svgTexto("flujo máximo = 3 = corte mínimo", { x: 800, y: 960, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.capaEncima);
+  igualdad.style.fontSize = "48px";
+  const menger = svgTexto("3 rutas disjuntas en aristas (Menger)", { x: 800, y: 960, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.capaEncima);
+  menger.style.fontSize = "48px";
+  const aislado = svgTexto("tras revocar: ningún usuario llega", { x: 800, y: 960, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.capaEncima);
+  aislado.style.fontSize = "48px"; aislado.style.fill = "#1a7f43";
+  const coloresRuta = ["#2e5aac", "#e67e22", "#8e44ad"];
+
+  const tl = gsap.timeline({ paused: true });
+  R.nodos.forEach(([id], i) => Mov.aparecer(tl, N(id), 0.15 + i * 0.04, { dur: 0.4 }));
+  Object.values(A).forEach((a, i) => Mov.trazar(tl, a, 0.4 + i * 0.04, { dur: 0.4 }));
+  tl.set(A["ou-b3"].p, { strokeDasharray: "10 9", strokeDashoffset: 0 }, 1.4);
+  // 1. El lado de S.
+  Mov.mostrar(tl, lado, 1.8, 0.6);
+  Mov.mostrar(tl, rotLado, 2.0);
+  // 2. Los accesos que cruzan la frontera: el corte minimo.
+  R.corte.forEach(([a, b], i) => {
+    Mov.colorArista(tl, A[`${a}-${b}`], "#c0392b", 3.0 + i * 0.3, { ancho: 7 });
+    tl.set(A[`${a}-${b}`].p, { strokeDasharray: "14 9", strokeDashoffset: 0 }, 3.35 + i * 0.3);
+  });
+  Mov.mostrar(tl, igualdad, 4.2);
+  // 3. Menger: tres rutas que no comparten ningun acceso revocable.
+  Mov.ocultar(tl, igualdad, 6.0);
+  Mov.mostrar(tl, menger, 6.2);
+  R.caminos.forEach((cam, k) => {
+    for (let j = 1; j + 2 < cam.length; j++) {
+      const clave = `${cam[j]}-${cam[j + 1]}`;
+      if (!R.corte.some(([a, b]) => `${a}-${b}` === clave)) Mov.colorArista(tl, A[clave], coloresRuta[k], 6.4 + k * 0.5 + j * 0.08, { ancho: 6 });
+    }
+    Mov.colorArista(tl, A[`${cam[cam.length - 3]}-DA`], coloresRuta[k], 6.4 + k * 0.5 + 0.3, { ancho: 6 });
+  });
+  // 4. Verificacion: sin el corte, los usuarios ya no alcanzan el objetivo.
+  Mov.ocultar(tl, menger, 9.0);
+  R.corte.forEach(([a, b]) => tl.to([A[`${a}-${b}`].p, A[`${a}-${b}`].flecha], { opacity: 0.12, duration: 0.4 }, 9.1));
+  ["u1", "u2", "u3", "u4", "g", "c"].forEach((id, i) => tl.to(N(id).c, { fill: "#1a7f43", duration: 0.3 }, 9.6 + i * 0.08));
+  Mov.mostrar(tl, aislado, 9.9);
+  Mov.destello(tl, N("DA"), 10.2, "#1a7f43");
+  window.__timelines["corteminimo"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

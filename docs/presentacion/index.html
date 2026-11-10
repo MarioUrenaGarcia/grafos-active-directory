@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rutas de acceso y defensa mínima en Active Directory: presentación de estudio</title>
+<link rel="icon" href="recursos/logo.svg">
+<style>
+  /* Bebas Neue (Dharma Type, SIL Open Font License 1.1): recursos/OFL-BebasNeue.txt */
+  @font-face { font-family: "Bebas Neue"; src: url("recursos/BebasNeue-Regular.ttf") format("truetype"); font-display: swap; }
+  :root {
+    --navy-900: #11263f; --navy-800: #17304f; --navy-700: #1c3350; --navy-600: #33496b;
+    --azul: #2e5aac; --verde: #1a7f43; --rojo: #c0392b; --naranja: #e67e22; --morado: #8e44ad;
+    --turquesa: #16a085; --gris: #7f8c8d; --ambar: #ffd37a; --fondo: #e9edf4; --texto: #1b2430;
+    --tenue: #5b6b80; --borde: #d5dce7; --blanco: #ffffff;
+    --f-titulo: "Bebas Neue", "Bahnschrift Condensed", "Arial Narrow", sans-serif;
+    --f-texto: Bahnschrift, "DIN Alternate", "Segoe UI", system-ui, sans-serif;
+    --f-mono: ui-monospace, Consolas, "Cascadia Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0b1a2c; overflow: hidden; }
+  body { font-family: var(--f-texto); color: var(--texto); }
+  /* Escenario fijo de 1920 x 1080 escalado a la ventana. */
+  #escenario { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+               transform-origin: 50% 50%; background: var(--fondo); overflow: hidden; }
+  .slide { position: absolute; inset: 0; display: none; padding: 80px 110px 90px; }
+  .slide.activa { display: block; }
+
+  /* Tipografia */
+  .eyebrow { font: 400 30px/1 var(--f-titulo); letter-spacing: .1em; color: var(--azul); margin: 0 0 14px; }
+  h1, h2, h3 { font-family: var(--f-titulo); font-weight: 400; margin: 0; letter-spacing: .02em; color: var(--navy-900); }
+  h2 { font-size: 78px; line-height: .98; margin-bottom: 34px; }
+  h3 { font-size: 40px; line-height: 1; margin: 0 0 14px; }
+  p { font-size: 29px; line-height: 1.42; margin: 0 0 22px; }
+  ul.puntos { margin: 0 0 22px; padding: 0; list-style: none; }
+  ul.puntos li { position: relative; font-size: 28px; line-height: 1.38; padding-left: 38px; margin-bottom: 14px; }
+  ul.puntos li::before { content: ""; position: absolute; left: 6px; top: 13px; width: 13px; height: 13px;
+                         border-radius: 50%; background: var(--azul); }
+  b, strong { font-weight: 700; color: var(--navy-900); }
+  code, .tipo { font-family: var(--f-mono); font-size: .86em; background: #dfe6f0; border-radius: 6px; padding: 2px 8px; color: var(--navy-900); }
+  .nota { border-left: 8px solid var(--azul); background: var(--blanco); padding: 20px 26px; font-size: 26px;
+          line-height: 1.4; border-radius: 0 12px 12px 0; margin: 0 0 22px; }
+  .nota.alerta { border-left-color: var(--rojo); }
+  .nota.ok { border-left-color: var(--verde); }
+  .nota.ambar { border-left-color: #d9a227; }
+  .formula { font-family: var(--f-mono); font-size: 30px; background: var(--navy-900); color: #fff; padding: 22px 28px;
+             border-radius: 12px; margin: 0 0 22px; line-height: 1.5; white-space: pre-wrap; }
+  pre.codigo { font-family: var(--f-mono); font-size: 22px; line-height: 1.45; background: var(--navy-900); color: #e8edf5;
+               padding: 24px 28px; border-radius: 12px; margin: 0 0 22px; white-space: pre-wrap; }
+  pre.codigo .c { color: #8fb4ee; } pre.codigo .k { color: var(--ambar); }
+
+  /* Distribuciones */
+  .dos { display: grid; grid-template-columns: 1fr 1000px; gap: 60px; align-items: start; }
+  .dos.mitad { grid-template-columns: 1fr 1fr; }
+  .tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+  .tarjeta { background: var(--blanco); border: 1px solid var(--borde); border-radius: 16px; padding: 28px 30px; }
+  .tarjeta p, .tarjeta li { font-size: 25px !important; }
+  .atacante { border-top: 10px solid var(--naranja); }
+  .defensor { border-top: 10px solid var(--verde); }
+
+  /* Animacion de la diapositiva: video de HyperFrames en un panel blanco */
+  figure.visual { margin: 0; background: var(--blanco); border: 1px solid var(--borde); border-radius: 18px;
+                  overflow: hidden; position: relative; }
+  figure.visual video { display: block; width: 1000px; height: 625px; background: #fff; }
+  figure.visual figcaption { font-size: 22px; color: var(--tenue); padding: 14px 22px 16px; border-top: 1px solid var(--borde); }
+  .repetir { position: absolute; right: 14px; top: 14px; width: 54px; height: 54px; border-radius: 12px; border: 1px solid var(--borde);
+             background: rgba(255,255,255,.92); cursor: pointer; display: grid; place-items: center; color: var(--navy-900); }
+  .repetir svg { width: 28px; height: 28px; }
+  .repetir:hover { background: var(--fondo); }
+
+  /* Tablas */
+  table.datos { border-collapse: collapse; width: 100%; font-size: 24px; background: var(--blanco); border-radius: 12px; overflow: hidden; }
+  table.datos th { font: 400 26px var(--f-titulo); letter-spacing: .06em; text-align: left; background: var(--navy-900); color: #fff; padding: 12px 18px; }
+  table.datos td { padding: 10px 18px; border-top: 1px solid var(--borde); vertical-align: top; line-height: 1.32; }
+  table.datos tr:nth-child(even) td { background: #f6f8fb; }
+
+  /* Cifras grandes */
+  .kpis { display: flex; gap: 26px; margin: 0 0 26px; flex-wrap: wrap; }
+  .kpi { background: var(--blanco); border: 1px solid var(--borde); border-radius: 16px; padding: 18px 26px; min-width: 210px; }
+  .kpi .n { font: 400 84px/1 var(--f-titulo); color: var(--navy-900); }
+  .kpi .t { font-size: 21px; color: var(--tenue); }
+
+  /* Portada y separadores de seccion */
+  .slide.oscura { background: var(--navy-900); color: #e8edf5; }
+  .slide.oscura h1, .slide.oscura h2, .slide.oscura h3, .slide.oscura b { color: #fff; }
+  .slide.oscura p, .slide.oscura li { color: #c3cfdf; }
+  .slide.oscura .eyebrow { color: var(--ambar); }
+  .portada h1 { font-size: 104px; line-height: .94; margin: 22px 0 28px; }
+  .portada .dos { grid-template-columns: 1fr 820px; align-items: center; height: 900px; }
+  .portada figure.visual video { width: 820px; height: 512px; }
+  .seccion .numero { font: 400 300px/1 var(--f-titulo); color: var(--azul); }
+  .seccion h2 { font-size: 120px; }
+
+  /* Cromo de navegacion */
+  #barra { position: fixed; left: 0; bottom: 0; height: 6px; background: var(--naranja); width: 0; z-index: 10; transition: width .25s; }
+  #pie { position: absolute; left: 110px; right: 110px; bottom: 30px; display: flex; justify-content: space-between;
+         font-size: 20px; color: var(--tenue); pointer-events: none; }
+  #controles { position: fixed; right: 18px; bottom: 18px; display: flex; gap: 8px; z-index: 11; }
+  #controles button { width: 50px; height: 50px; border-radius: 12px; border: 0; background: rgba(17,38,63,.85); color: #fff;
+                      cursor: pointer; display: grid; place-items: center; }
+  #controles button svg { width: 26px; height: 26px; }
+  #indice { position: fixed; inset: 0; background: rgba(11,26,44,.96); z-index: 20; display: none; overflow-y: auto;
+            padding: 60px 8vw; color: #e8edf5; font-family: var(--f-texto); }
+  #indice.abierto { display: block; }
+  #indice h2 { color: #fff; font-size: 64px; margin-bottom: 24px; }
+  #indice .grupo { font: 400 30px var(--f-titulo); letter-spacing: .08em; color: var(--ambar); margin: 26px 0 8px; }
+  #indice a { display: block; color: #c3cfdf; text-decoration: none; font-size: 20px; padding: 5px 0; }
+  #indice a:hover { color: #fff; }
+  .chev-izq { transform: rotate(90deg); } .chev-der { transform: rotate(-90deg); }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute"><symbol id="ic-bfs" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12V5.2M12 12l5.9 3.4M12 12l-5.9 3.4"/><circle cx="12" cy="12" r="9.4" stroke-width="1.3" stroke-dasharray="1.4 2.6"/></g><g fill="currentColor"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="5.2" r="1.9"/><circle cx="17.9" cy="15.4" r="1.9"/><circle cx="6.1" cy="15.4" r="1.9"/></g></symbol><symbol id="ic-dijkstra" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 18.5 10 8.5" stroke-width="3"/><path d="M10 8.5l5 6.5" stroke-width="1.2"/><path d="M15 15l4.5-9.5" stroke-width="2"/></g><g fill="currentColor"><circle cx="4.5" cy="18.5" r="2.3"/><circle cx="10" cy="8.5" r="2"/><circle cx="15" cy="15" r="2"/><circle cx="19.5" cy="5.5" r="2.3"/></g></symbol><symbol id="ic-defensa" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5 9.9 8.85M13.1 10.25l2.2.95M4.5 17.5l6.3-2.74M13.9 13.4l1.4-.6"/><circle cx="18.5" cy="12" r="3.2"/><path d="M10.5 3.5l3 17" stroke-width="2.4"/></g><g fill="currentColor"><circle cx="4.5" cy="6.5" r="2"/><circle cx="4.5" cy="17.5" r="2"/><circle cx="18.5" cy="12" r="1.2"/></g></symbol><symbol id="ic-ejecutar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l13.5-6M5 12h14.5M5 12l13.5 6"/></g><g fill="currentColor"><circle cx="5" cy="12" r="2.6"/><circle cx="18.5" cy="6" r="1.8"/><circle cx="19.5" cy="12" r="1.8"/><circle cx="18.5" cy="18" r="1.8"/></g></symbol><symbol id="ic-buscar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></g><g fill="currentColor"><circle cx="12" cy="12" r="2.2"/></g></symbol><symbol id="ic-panel" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/></g><g fill="currentColor"><circle cx="6.25" cy="8.5" r="1.2"/><circle cx="6.25" cy="12" r="1.2"/><circle cx="6.25" cy="15.5" r="1.2"/></g></symbol><symbol id="ic-atajos" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M7 12h10"/></g><g fill="currentColor"><circle cx="7" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="17" cy="12" r="1.6"/></g></symbol><symbol id="ic-acercar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15M4.5 12h15"/></g><g fill="currentColor"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="4.5" r="1.7"/><circle cx="12" cy="19.5" r="1.7"/><circle cx="4.5" cy="12" r="1.7"/><circle cx="19.5" cy="12" r="1.7"/></g></symbol><symbol id="ic-alejar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></g><g fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></g></symbol><symbol id="ic-ajustar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5v-5h5M15.5 3.5h5v5M20.5 15.5v5h-5M8.5 20.5h-5v-5M12 8.5l-3.5 6.5h7z"/></g><g fill="currentColor"><circle cx="12" cy="8.5" r="1.6"/><circle cx="8.5" cy="15" r="1.6"/><circle cx="15.5" cy="15" r="1.6"/></g></symbol><symbol id="ic-cerrar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g><g fill="currentColor"><circle cx="6.5" cy="6.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="6.5" r="1.8"/><circle cx="6.5" cy="17.5" r="1.8"/></g></symbol><symbol id="ic-chevron" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9l6.5 6.5L18.5 9"/></g><g fill="currentColor"><circle cx="12" cy="15.5" r="2"/></g></symbol><symbol id="ic-reproducir" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5 18 12 8 18.5z"/></g><g fill="currentColor"><circle cx="8" cy="5.5" r="2.3"/><circle cx="8" cy="18.5" r="2.3"/><circle cx="18" cy="12" r="2.3"/></g></symbol><symbol id="ic-pausa" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 6.5v11M15.5 6.5v11" stroke-width="2.4"/></g><g fill="currentColor"><circle cx="8.5" cy="6.5" r="2.2"/><circle cx="8.5" cy="17.5" r="2.2"/><circle cx="15.5" cy="6.5" r="2.2"/><circle cx="15.5" cy="17.5" r="2.2"/></g></symbol><symbol id="ic-siguiente" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 12H18M13.5 7.5 18 12l-4.5 4.5"/></g><g fill="currentColor"><circle cx="5.5" cy="12" r="2.3"/></g></symbol><symbol id="ic-anterior" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 12H6M10.5 7.5 6 12l4.5 4.5"/></g><g fill="currentColor"><circle cx="18.5" cy="12" r="2.3"/></g></symbol><symbol id="ic-inicio" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 6v12M17.5 7 11 12l6.5 5"/></g><g fill="currentColor"><circle cx="5.5" cy="6" r="1.7"/><circle cx="5.5" cy="18" r="1.7"/><circle cx="11" cy="12" r="2"/></g></symbol><symbol id="ic-fin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 6v12M6.5 7 13 12l-6.5 5"/></g><g fill="currentColor"><circle cx="18.5" cy="6" r="1.7"/><circle cx="18.5" cy="18" r="1.7"/><circle cx="13" cy="12" r="2"/></g></symbol><symbol id="ic-logo" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#2e5aac"/><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M13 14l4.6 2.09M21.6 17.91l6.1 2.79M11 24h7.8M23.2 24h3.8M13 34l7.17-3.26M24.17 28.92l3.53-1.62"/></g><path d="M18.6 12l4.8 24" stroke="#ffd37a" stroke-width="3.2" stroke-linecap="round"/><g fill="#fff"><circle cx="13" cy="14" r="3"/><circle cx="11" cy="24" r="3"/><circle cx="13" cy="34" r="3"/></g><circle cx="35" cy="24" r="6.5" fill="#c0392b" stroke="#fff" stroke-width="2.5"/><circle cx="35" cy="24" r="2" fill="#fff"/></symbol></svg>
+<div id="escenario">
+<section class="slide oscura portada" data-seccion="Introducción">
+  <div class="dos">
+    <div>
+      <div class="eyebrow">Matemáticas Discretas - Proyecto final</div>
+      <h1>Rutas de acceso y defensa mínima en Active Directory</h1>
+      <p>Presentación de estudio: los fundamentos de ciberseguridad, la teoría de grafos y el código del proyecto, hasta el nivel técnico.</p>
+      <p style="font-size: 23px">Avanza con las flechas o la barra espaciadora. La tecla I abre el índice.</p>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/logo.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Tres objetos con accesos hacia un objetivo y el corte mínimo que los interrumpe.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Introducción">
+  <div class="eyebrow">El problema</div>
+  <h2>La pregunta que responde el proyecto</h2>
+  <div class="dos mitad">
+    <div>
+      <p>En un dominio de Active Directory, cada permiso, pertenencia a grupo o sesión abierta es un acceso: quien controla un objeto puede llegar a controlar otro. Encadenados, esos accesos forman <b>rutas de ataque</b> hacia los objetos de más valor.</p>
+      <ul class="puntos">
+        <li>Quién puede llegar a un objetivo de alto valor, y por qué camino.</li>
+        <li>Cuál es la ruta más corta y cuál la de menor esfuerzo.</li>
+        <li>Cuál es el <b>mínimo</b> de accesos que hay que revocar para que ninguna ruta llegue, y cómo se demuestra que es mínimo.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="kpis">
+        <div class="kpi"><div class="n">953</div><div class="t">objetos del directorio</div></div>
+        <div class="kpi"><div class="n">4698</div><div class="t">accesos (aristas)</div></div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="n">147</div><div class="t">objetos llegan a DOMAIN ADMINS</div></div>
+        <div class="kpi"><div class="n">15</div><div class="t">accesos bastan para aislarlo</div></div>
+      </div>
+      <div class="nota ok">El corte de 15 accesos sale del teorema de flujo máximo y corte mínimo, y una segunda búsqueda comprueba que ningún usuario llega después de revocarlos.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Introducción">
+  <div class="eyebrow">Mapa de la presentación</div>
+  <h2>Cuatro partes, de la intuición al código</h2>
+  <div class="dos mitad">
+    <div>
+      <div class="tarjeta" style="margin-bottom: 26px">
+        <h3>1. Fundamentos de ciberseguridad</h3>
+        <p>Active Directory, autenticación, sesiones, grupos, permisos, delegación, replicación y por qué todo eso forma un grafo.</p>
+      </div>
+      <div class="tarjeta">
+        <h3>2. Atacante, defensor y casos de uso</h3>
+        <p>Cómo se encadena una escalada real del dataset, qué hace un defensor y para qué sirve la herramienta.</p>
+      </div>
+    </div>
+    <div>
+      <div class="tarjeta" style="margin-bottom: 26px">
+        <h3>3. Fundamento matemático</h3>
+        <p>Grafos dirigidos, BFS, Dijkstra, cerradura transitiva, componentes fuertes, centralidad, flujo máximo, corte mínimo y Menger.</p>
+      </div>
+      <div class="tarjeta">
+        <h3>4. Arquitectura y código</h3>
+        <p>Módulos, línea de comandos, servidor web, interfaz, visor offline y pruebas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="slide oscura seccion" data-seccion="Fundamentos de ciberseguridad">
+  <div class="numero">1</div>
+  <h2>Fundamentos de ciberseguridad</h2>
+  <div class="dos mitad">
+    <ul class="puntos">
+      <li>Active Directory: dominio, controlador y servicios</li>
+      <li>Objetos del directorio y sus cifras en el dataset</li>
+      <li>Identidad, hashes, NTLM y Kerberos</li>
+      <li>Sesiones, credenciales en memoria y grupos anidados</li>
+      <li>ACL: quién puede modificar a quién</li>
+    </ul>
+    <ul class="puntos">
+      <li>Acceso remoto, delegación y replicación</li>
+      <li>OU, GPO y accesos estructurales</li>
+      <li>Objetos de alto valor y modelo de niveles</li>
+      <li>Los 16 tipos de acceso del dataset</li>
+      <li>Rutas de ataque como grafo y origen del dataset</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Active Directory</div>
+  <h2>Qué es Active Directory</h2>
+  <div class="dos">
+    <div>
+      <p>Active Directory (AD) es el servicio de directorio de Microsoft: una base de datos central con las identidades y los recursos de una organización, y las reglas de quién puede usar qué.</p>
+      <ul class="puntos">
+        <li><b>Dominio</b>: unidad de administración con nombre propio; aquí, TestCompany.Local.</li>
+        <li><b>Bosque</b>: uno o más dominios que confían entre sí. El dataset tiene un solo dominio.</li>
+        <li><b>Controlador de dominio</b>: servidor que guarda el directorio y autentica cada inicio de sesión. En el dataset es FLLABDC.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/dominio.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>El controlador al centro, los objetos del dominio agrupados y la autenticación que viaja hacia él.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Active Directory</div>
+  <h2>Qué hace el controlador de dominio</h2>
+  <p>Cada controlador guarda una copia de la <b>base de datos del directorio</b> (el archivo NTDS.dit): todos los objetos, sus permisos y los hashes de las contraseñas. Los controladores se replican entre sí para mantenerla igual. Sobre esa base ofrece tres servicios clave:</p>
+  <div class="tres">
+    <div class="tarjeta">
+      <h3>LDAP</h3>
+      <p>Protocolo para consultar y modificar el directorio (puerto 389). Por LDAP se leen usuarios, grupos, permisos, OU y políticas: es la puerta del inventario.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>DNS</h3>
+      <p>Traduce nombres a direcciones y publica dónde están los controladores. Sin DNS un equipo no sabe a quién pedirle la autenticación.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Kerberos</h3>
+      <p>Protocolo de autenticación por defecto del dominio (puerto 88). El controlador actúa como KDC: emite los tickets que prueban la identidad.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Objetos del directorio</div>
+  <h2>Qué hay dentro del dominio</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="n">300</div><div class="t">usuarios (User)</div></div>
+    <div class="kpi"><div class="n">301</div><div class="t">equipos (Computer)</div></div>
+    <div class="kpi"><div class="n">308</div><div class="t">grupos (Group)</div></div>
+    <div class="kpi"><div class="n">21</div><div class="t">unidades organizativas (OU)</div></div>
+    <div class="kpi"><div class="n">22</div><div class="t">directivas de grupo (GPO)</div></div>
+    <div class="kpi"><div class="n">1</div><div class="t">dominio (Domain)</div></div>
+  </div>
+  <table class="datos">
+    <tr><th>Tipo</th><th>Qué es</th><th>Ejemplo del dataset</th></tr>
+    <tr><td>User</td><td>Cuenta de una persona o de un servicio; se autentica con contraseña</td><td>PiedadFlatley255</td></tr>
+    <tr><td>Computer</td><td>Cuenta de un equipo unido al dominio: estación de trabajo o servidor</td><td>COMP00045, FLLABDC</td></tr>
+    <tr><td>Group</td><td>Conjunto de cuentas; los permisos se dan al grupo y los heredan sus miembros</td><td>DOMAIN ADMINS, IT00161</td></tr>
+    <tr><td>OU</td><td>Unidad organizativa: carpeta que ordena objetos y recibe políticas</td><td>NV_COMPUTERS</td></tr>
+    <tr><td>GPO</td><td>Objeto de directiva de grupo: configuración que se aplica a las OU vinculadas</td><td>GPO_13</td></tr>
+    <tr><td>Domain</td><td>El propio dominio como objeto; raíz de la jerarquía de OU</td><td>TestCompany.Local</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Identidad y autenticación</div>
+  <h2>Contraseñas, hashes y protocolos</h2>
+  <p>Autenticar es probar quién eres. El dominio no guarda contraseñas: guarda su <b>hash</b>, el resultado de una función de un solo sentido. Un hash no se invierte, solo se puede adivinar probando contraseñas; por eso importan las contraseñas largas.</p>
+  <div class="nota">Cada cuenta tiene un identificador único, el <b>SID</b> (la propiedad <code>objectid</code> del dataset). Los grupos predefinidos terminan en un número fijo: DOMAIN ADMINS en -512 y DOMAIN USERS en -513.</div>
+  <div class="dos mitad">
+    <div class="tarjeta">
+      <h3>NTLM (heredado)</h3>
+      <p>Desafío y respuesta: el servidor envía un valor aleatorio y el cliente responde con un cálculo que usa su hash. Como el hash basta para responder, un hash robado vale casi como la contraseña.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Kerberos (por defecto)</h3>
+      <p>Un tercero de confianza, el KDC del controlador, emite tickets con vigencia limitada. La contraseña se usa una sola vez; después el usuario presenta tickets a cada servicio.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Identidad y autenticación</div>
+  <h2>Kerberos: tickets en lugar de claves</h2>
+  <div class="dos">
+    <div>
+      <p>El <b>KDC</b> (centro de distribución de claves) corre en el controlador de dominio.</p>
+      <ul class="puntos">
+        <li><b>1 y 2.</b> El usuario prueba su identidad y recibe un <b>TGT</b>, cifrado con la clave de la cuenta krbtgt.</li>
+        <li><b>3 y 4.</b> Canjea el TGT por un <b>ticket de servicio</b> (TS) para un servidor concreto.</li>
+        <li><b>5.</b> Presenta el TS al servidor, que lo valida con su propia clave.</li>
+        <li>Quien posee un ticket válido actúa como su titular mientras dure.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/kerberos.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Usuario, KDC y servidor: pedir y recibir el TGT, canjearlo por un TS y presentarlo.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Credenciales en memoria</div>
+  <h2>La credencial queda en el equipo</h2>
+  <div class="dos">
+    <div>
+      <p>Para el inicio de sesión único, Windows guarda en la memoria del equipo (proceso LSASS) material de la credencial de cada usuario con sesión abierta.</p>
+      <ul class="puntos">
+        <li>Quien controla el equipo puede leer esa memoria y actuar como el usuario.</li>
+        <li>Si el usuario es administrador, su privilegio queda expuesto en un equipo mucho menos protegido.</li>
+        <li>Caso real: CaronOstrye16 controla COMP00045, donde PingFrankel165 tiene sesión, y llega a DOMAIN ADMINS.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/sesion.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Sesión de PingFrankel165 en COMP00045, control vía EXECUTE_DCOM y salto a DOMAIN ADMINS.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Credenciales en memoria</div>
+  <h2>HAS_SESSION va del equipo al usuario</h2>
+  <div class="dos mitad">
+    <div>
+      <p>En el proyecto toda arista A -> B se lee igual: <b>quien controla A puede llegar a controlar B</b>. El usuario abre la sesión, pero el control fluye del equipo hacia el usuario.</p>
+      <div class="formula">COMP00045 -HAS_SESSION-> PingFrankel165</div>
+      <p>Controlar el equipo expone la credencial; controlar al usuario no da, por esa sesión, nada sobre el equipo.</p>
+      <div class="nota ambar">El modelo es pesimista: supone que cualquier control del equipo basta para tomar la credencial. En la práctica suele exigir ser administrador local.</div>
+    </div>
+    <div>
+      <ul class="puntos">
+        <li><b>264</b> aristas <span class="tipo">HAS_SESSION</span>, todas Computer -> User.</li>
+        <li><b>180</b> equipos tienen alguna sesión y <b>182</b> usuarios tienen sesión en algún equipo.</li>
+        <li><b>66</b> equipos tienen sesiones de varios usuarios: comprometer uno expone a todos ellos.</li>
+        <li>Peso <b>4</b> en Dijkstra: el acceso de mayor esfuerzo en la escala del proyecto.</li>
+      </ul>
+      <div class="nota ok"><b>Defensa:</b> las cuentas privilegiadas solo inician sesión en equipos de su mismo nivel, y la memoria de credenciales se aísla (Credential Guard).</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Grupos</div>
+  <h2>Grupos anidados y permisos heredados</h2>
+  <div class="dos">
+    <div>
+      <p>Los permisos se asignan a grupos, no a personas. Un grupo puede ser miembro de otro, y la pertenencia se hereda hacia arriba.</p>
+      <ul class="puntos">
+        <li>ana es miembro de SOPORTE, SOPORTE de IT, e IT de ADMINS SERVIDORES.</li>
+        <li>Por transitividad, ana pertenece a los tres y hereda <span class="tipo">ADMIN_TO</span> sobre los tres servidores.</li>
+        <li>Nadie la puso en ADMINS SERVIDORES: su privilegio es <b>efectivo</b>, no directo.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/anidados.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Cadena de MEMBER_OF y, en ámbar, las pertenencias efectivas que crea (nombres ilustrativos).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Grupos</div>
+  <h2>Del permiso directo al efectivo</h2>
+  <p>La pertenencia <span class="tipo">MEMBER_OF</span> es una relación binaria R: x R g si x es miembro directo de g. Los grupos <b>efectivos</b> de x son los que alcanza por cualquier cadena x R g1 R g2 ... R g, es decir, la <b>cerradura transitiva</b> R+.</p>
+  <div class="formula">efectivos(x) = { g : hay un camino de MEMBER_OF de x a g }</div>
+  <ul class="puntos">
+    <li>En el dataset hay 16 aristas MEMBER_OF de grupo a grupo. La cerradura tiene 18 pares: los 2 nuevos son lazos del ciclo entre BIDNESS00144 y BIDNESS00145, cada uno miembro del otro.</li>
+    <li>Los usuarios sí heredan por grupos: de 118 accesos RDP de usuarios, 30 son directos y 88 heredados.</li>
+    <li>PiedadFlatley255 tiene 6 grupos efectivos, entre ellos DOMAIN ADMINS, todos por pertenencia directa.</li>
+  </ul>
+  <div class="nota">El proyecto calcula R+ con el algoritmo de Warshall sobre los 308 grupos, guardando cada fila de la matriz como un entero de bits.</div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Permisos sobre objetos</div>
+  <h2>ACL: quién puede modificar a quién</h2>
+  <div class="dos">
+    <div>
+      <p>Cada objeto del directorio tiene un descriptor de seguridad: un <b>propietario</b> y una <b>DACL</b> (lista de control de acceso discrecional).</p>
+      <ul class="puntos">
+        <li>La DACL es una lista de <b>ACE</b>: cada entrada dice qué identidad tiene qué derecho.</li>
+        <li>Un derecho de escritura o de control se vuelve una arista del grafo.</li>
+        <li>La lectura no da control: no genera arista.</li>
+        <li>917 aristas del dataset vienen de ACL (propiedad isacl = true).</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/acl.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>DACL ilustrativa de jefa.ti: dos ACE generan aristas y la de solo lectura no.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Permisos sobre objetos</div>
+  <h2>Cinco derechos que dan control</h2>
+  <p>WRITE_DACL, WRITE_OWNER y OWNS no son control inmediato, sino el poder de concedérselo: un paso más que GENERIC_ALL. Por eso pesan 2 y no 1.</p>
+  <table class="datos">
+    <tr><th>Acceso</th><th>Peso</th><th>Qué permite sobre B</th><th>En el dataset</th></tr>
+    <tr><td><span class="tipo">GENERIC_ALL</span></td><td>1</td><td>Control total: cualquier cambio, incluso la contraseña de un usuario o los miembros de un grupo</td><td>901: DOMAIN ADMINS sobre 900 objetos y ENTERPRISE ADMINS sobre el dominio</td></tr>
+    <tr><td><span class="tipo">GENERIC_WRITE</span></td><td>2</td><td>Modificar atributos; en un usuario o una GPO basta para tomar su control</td><td>2: IT00195 sobre GPO_15 y sobre DanielleGallery238, miembro de DOMAIN ADMINS</td></tr>
+    <tr><td><span class="tipo">WRITE_DACL</span></td><td>2</td><td>Reescribir la DACL y concederse cualquier derecho, por ejemplo control total</td><td>2: DOMAIN ADMINS y ADMINISTRATORS sobre el dominio</td></tr>
+    <tr><td><span class="tipo">WRITE_OWNER</span></td><td>2</td><td>Hacerse propietario y, como propietario, cambiar la DACL</td><td>2: los mismos dos grupos sobre el dominio</td></tr>
+    <tr><td><span class="tipo">OWNS</span></td><td>2</td><td>El propietario puede modificar la DACL aunque no figure en ella</td><td>1: ADMINISTRATORS sobre el dominio</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Control de equipos</div>
+  <h2>Tres formas de controlar un equipo</h2>
+  <p>Estos tres accesos apuntan a un equipo (Computer). Los tres se modelan como control del equipo y, con él, de las credenciales que haya en su memoria.</p>
+  <div class="nota ambar">El modelo, heredado de BloodHound, es pesimista a propósito: para el defensor es mejor sobrestimar una ruta que pasarla por alto. La diferencia de dificultad queda en los pesos del proyecto.</div>
+  <div class="tres">
+    <div class="tarjeta">
+      <h3>ADMIN_TO</h3>
+      <p>Administrador local: instala, ejecuta y lee la memoria del equipo. Es control total. <b>1347</b> aristas, todas de grupos; DOMAIN ADMINS administra los 301 equipos. Peso 1.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>CAN_RDP</h3>
+      <p>Puede abrir una sesión interactiva por escritorio remoto. No es administrador por sí solo, pero da presencia en el equipo para seguir escalando. <b>60</b> aristas: 30 de usuarios y 30 de grupos. Peso 3.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>EXECUTE_DCOM</h3>
+      <p>Puede ejecutar código de forma remota mediante DCOM (COM distribuido), un mecanismo de Windows para invocar objetos en otro equipo. <b>60</b> aristas: 30 de usuarios y 30 de grupos. Peso 3.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Delegación</div>
+  <h2>Delegación: actuar en nombre de otro</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Algunos servicios necesitan llegar a otro servidor <b>con la identidad del usuario</b> que los llama: por ejemplo, una aplicación web que consulta una base de datos como quien navega. Kerberos lo permite con la <b>delegación</b>.</p>
+      <p>En la delegación restringida, el directorio lista a qué servicios de qué equipos puede delegar una cuenta. Esa cuenta puede pedir tickets de servicio para esos destinos <b>a nombre de otros usuarios</b>.</p>
+    </div>
+    <div>
+      <div class="formula">cuenta -ALLOWED_TO_DELEGATE-> equipo</div>
+      <ul class="puntos">
+        <li>Si la cuenta se compromete, puede suplantar a casi cualquier usuario, incluso un administrador, ante los servicios de ese equipo: equivale a controlarlo.</li>
+        <li>En el dataset: 30 aristas, todas User -> Computer, hacia 27 equipos distintos. Peso 3.</li>
+      </ul>
+      <div class="nota ok"><b>Defensa:</b> marcar las cuentas privilegiadas como no delegables (o incluirlas en Protected Users) y revisar qué cuentas tienen delegación.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Replicación del directorio</div>
+  <h2>DCSync: replicar es comprometer</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Cada controlador copia los cambios de los demás. Pedir esa copia exige dos derechos extendidos sobre el objeto dominio:</p>
+      <ul class="puntos">
+        <li><span class="tipo">GET_CHANGES</span>: replicar los cambios del directorio (Replicating Directory Changes).</li>
+        <li><span class="tipo">GET_CHANGES_ALL</span>: replicar también los datos secretos, como los hashes.</li>
+        <li><span class="tipo">DC_SYNC</span>: arista que resume tener ambos. Quien la tiene puede pedir la replicación como si fuera un controlador.</li>
+      </ul>
+    </div>
+    <div>
+      <p>Por qué equivale a perder el dominio: la replicación entrega los hashes de <b>todas</b> las cuentas, incluida <b>krbtgt</b>, cuya clave firma todos los TGT. Con ella se pueden fabricar TGT válidos para cualquier identidad.</p>
+      <div class="nota">En el dataset: DC_SYNC sale de DOMAIN ADMINS y de ADMINISTRATORS hacia TestCompany.Local. GET_CHANGES tiene 4 aristas y GET_CHANGES_ALL 3, todas de grupos hacia el dominio.</div>
+      <div class="nota ok"><b>Defensa:</b> solo los controladores deben tener estos derechos; una petición de replicación desde otro equipo es una alerta.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Estructura del directorio</div>
+  <h2>OU y GPO: accesos estructurales</h2>
+  <div class="dos mitad">
+    <div>
+      <p><span class="tipo">CONTAINS</span>: el dominio contiene OU y cada OU contiene usuarios y equipos. Quien controla una OU puede imponer cambios a todo lo que hay dentro, por ejemplo con permisos que se heredan.</p>
+      <p><span class="tipo">GP_LINK</span>: una GPO vinculada a una OU (o al dominio) se aplica a todos sus objetos. Controlar la GPO es imponer configuración en todos esos equipos y usuarios.</p>
+      <div class="formula">GPO -GP_LINK-> OU -CONTAINS-> equipo</div>
+    </div>
+    <div>
+      <ul class="puntos">
+        <li>21 OU: una de usuarios y una de equipos para cada una de 10 regiones (AL, CA, FL, IN, MD, NV, NY, TX, VA, WA), más la OU DOMAIN CONTROLLERS.</li>
+        <li>CONTAINS: 622 (dominio -> 21 OU, OU -> 301 equipos, OU -> 300 usuarios).</li>
+        <li>GP_LINK: 37 (34 GPO -> OU, 2 dominio -> OU, 1 GPO -> dominio).</li>
+        <li>Caso real: IT00195 tiene GENERIC_WRITE sobre GPO_15, vinculada a la OU IN_COMPUTERS, que contiene 30 equipos.</li>
+      </ul>
+      <div class="nota ambar"><b>Estructurales:</b> nadie se defiende sacando equipos de su OU o desvinculando políticas. El plan de defensa les da capacidad infinita: nunca entran en el corte, que solo revoca permisos.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Objetivos de alto valor</div>
+  <h2>Alto valor y modelo de niveles</h2>
+  <p>El modelo de niveles de Microsoft separa la administración en capas: <b>nivel 0</b>, lo que controla la identidad (dominio, controladores y sus administradores); <b>nivel 1</b>, servidores y aplicaciones; <b>nivel 2</b>, estaciones y usuarios. Una cuenta de nivel 0 nunca inicia sesión en equipos de nivel 1 o 2.</p>
+  <div class="nota">En el dataset la etiqueta <b>HighValue</b> marca los 6 objetos de nivel 0: son los objetivos del análisis. PiedadFlatley255 alcanza 4; ADMINISTRATORS y ENTERPRISE ADMINS no tienen aristas de entrada y nadie los alcanza.</div>
+  <table class="datos">
+    <tr><th>Objetivo</th><th>Tipo</th><th>Qué es</th><th>Aristas de entrada</th></tr>
+    <tr><td>DOMAIN ADMINS</td><td>Group</td><td>Administradores de todo el dominio</td><td>15: usuarios miembros</td></tr>
+    <tr><td>ADMINISTRATORS</td><td>Group</td><td>Grupo integrado que administra los controladores</td><td>0</td></tr>
+    <tr><td>ENTERPRISE ADMINS</td><td>Group</td><td>Administradores de todo el bosque</td><td>0</td></tr>
+    <tr><td>DOMAIN CONTROLLERS</td><td>Group</td><td>Cuentas de equipo de los controladores</td><td>1: FLLABDC</td></tr>
+    <tr><td>ENTERPRISE DOMAIN CONTROLLERS</td><td>Group</td><td>Controladores de todo el bosque</td><td>1: FLLABDC</td></tr>
+    <tr><td>TestCompany.Local</td><td>Domain</td><td>El dominio como objeto</td><td>16: 15 derechos de grupos y 1 GP_LINK</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Tipos de acceso</div>
+  <h2>Los 16 tipos de acceso (1 de 2)</h2>
+  <p>Cada arista se lee A -> B: quien controla A puede llegar a controlar B. El peso es la escala ordinal de esfuerzo de pesos.py que usa Dijkstra (1 trivial, 4 el más costoso).</p>
+  <table class="datos">
+    <tr><th>Acceso</th><th>Aristas</th><th>Origen -> destino</th><th>Significado</th><th>Peso</th></tr>
+    <tr><td><span class="tipo">MEMBER_OF</span></td><td>1361</td><td>User, Computer, Group -> Group</td><td>A es miembro del grupo B y hereda sus permisos</td><td>1</td></tr>
+    <tr><td><span class="tipo">ADMIN_TO</span></td><td>1347</td><td>Group -> Computer</td><td>A es administrador local del equipo B</td><td>1</td></tr>
+    <tr><td><span class="tipo">GENERIC_ALL</span></td><td>901</td><td>Group -> User, Computer, Group, Domain</td><td>A tiene control total sobre B</td><td>1</td></tr>
+    <tr><td><span class="tipo">CONTAINS</span></td><td>622</td><td>Domain, OU -> OU, User, Computer</td><td>B está dentro de A; estructural, no se revoca</td><td>1</td></tr>
+    <tr><td><span class="tipo">HAS_SESSION</span></td><td>264</td><td>Computer -> User</td><td>B tiene sesión en A; controlar A expone su credencial</td><td>4</td></tr>
+    <tr><td><span class="tipo">CAN_RDP</span></td><td>60</td><td>User, Group -> Computer</td><td>A puede abrir escritorio remoto en B</td><td>3</td></tr>
+    <tr><td><span class="tipo">EXECUTE_DCOM</span></td><td>60</td><td>User, Group -> Computer</td><td>A puede ejecutar código en B mediante DCOM</td><td>3</td></tr>
+    <tr><td><span class="tipo">GP_LINK</span></td><td>37</td><td>GPO, Domain -> OU, Domain</td><td>La política A se aplica a B; estructural</td><td>2</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Tipos de acceso</div>
+  <h2>Los 16 tipos de acceso (2 de 2)</h2>
+  <p>Los 8 tipos menos frecuentes suman 46 aristas, y 6 de ellos apuntan solo al objeto dominio. Total del dataset: 4698 aristas de 16 tipos.</p>
+  <table class="datos">
+    <tr><th>Acceso</th><th>Aristas</th><th>Origen -> destino</th><th>Significado</th><th>Peso</th></tr>
+    <tr><td><span class="tipo">ALLOWED_TO_DELEGATE</span></td><td>30</td><td>User -> Computer</td><td>A puede suplantar usuarios ante los servicios de B</td><td>3</td></tr>
+    <tr><td><span class="tipo">GET_CHANGES</span></td><td>4</td><td>Group -> Domain</td><td>A puede replicar los cambios del dominio</td><td>1</td></tr>
+    <tr><td><span class="tipo">GET_CHANGES_ALL</span></td><td>3</td><td>Group -> Domain</td><td>A puede replicar también los secretos</td><td>1</td></tr>
+    <tr><td><span class="tipo">WRITE_OWNER</span></td><td>2</td><td>Group -> Domain</td><td>A puede hacerse propietario de B</td><td>2</td></tr>
+    <tr><td><span class="tipo">WRITE_DACL</span></td><td>2</td><td>Group -> Domain</td><td>A puede reescribir los permisos de B</td><td>2</td></tr>
+    <tr><td><span class="tipo">DC_SYNC</span></td><td>2</td><td>Group -> Domain</td><td>A puede replicar el dominio completo, hashes incluidos</td><td>1</td></tr>
+    <tr><td><span class="tipo">GENERIC_WRITE</span></td><td>2</td><td>Group -> User, GPO</td><td>A puede modificar atributos de B</td><td>2</td></tr>
+    <tr><td><span class="tipo">OWNS</span></td><td>1</td><td>Group -> Domain</td><td>A es propietario de B y puede cambiar su DACL</td><td>2</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Rutas de ataque</div>
+  <h2>Listas contra grafos</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Una idea de John Lambert (Microsoft), parafraseada: <b>los defensores piensan en listas; los atacantes, en grafos</b>. Mientras sea así, ganan los atacantes.</p>
+      <ul class="puntos">
+        <li>Una lista revisa cada permiso por separado, y cada uno parece razonable.</li>
+        <li>Un grafo muestra cómo se encadenan: un permiso menor puede ser el primer salto hacia el nivel 0.</li>
+        <li>Este proyecto piensa en grafos y le devuelve al defensor una lista corta: los accesos exactos que hay que revocar.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="formula">A -> B
+quien controla A puede
+llegar a controlar B</div>
+      <p>Una ruta de ataque es un camino dirigido. Caso real de menor esfuerzo, peso 3 + 4 + 1 = 8:</p>
+      <pre class="codigo">CaronOstrye16  -EXECUTE_DCOM-> COMP00045
+COMP00045      -HAS_SESSION->  PingFrankel165
+PingFrankel165 -MEMBER_OF->    DOMAIN ADMINS</pre>
+      <p>Defender es lograr que no quede ningún camino de las fuentes a los objetivos.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Origen del dataset</div>
+  <h2>BloodHound, SharpHound y Neo4j</h2>
+  <div class="dos mitad">
+    <div>
+      <ul class="puntos">
+        <li><b>SharpHound</b>: recolector de BloodHound. Lee el directorio por LDAP (usuarios, grupos, ACL, OU, GPO) y pregunta a los equipos por sesiones y administradores locales.</li>
+        <li><b>Neo4j</b>: base de datos de grafos. Guarda objetos como nodos y accesos como relaciones; se consulta con el lenguaje <b>Cypher</b>.</li>
+        <li><b>BloodHound</b>: dibuja ese grafo y busca rutas hacia los objetivos. Lo usan equipos de ataque y de defensa.</li>
+      </ul>
+      <div class="nota">El dataset es un entorno <b>ficticio</b> del ejemplo de cybersecurity de Neo4j: sigue el modelo de datos de BloodHound, pero no describe una empresa real.</div>
+    </div>
+    <div>
+      <pre class="codigo"><span class="c">// patrón Cypher del ejemplo original:</span>
+<span class="c">// sesiones activas</span>
+<span class="k">MATCH</span> (:Computer)-[:HAS_SESSION]->(:User)</pre>
+      <div class="nota ok"><b>Lo distinto de este proyecto:</b> no usa Neo4j ni BloodHound. Carga el JSON exportado (953 nodos, 4698 aristas) con Python estándar, reimplementa cada consulta como un recorrido y agrega lo que el ejemplo no tiene: el plan de defensa mínimo por flujo máximo y corte mínimo, verificado.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamentos de ciberseguridad">
+  <div class="eyebrow">Resumen de la parte</div>
+  <h2>Qué deberías poder explicar ahora</h2>
+  <ul class="puntos">
+    <li>Qué es un dominio, un controlador de dominio y para qué sirven LDAP, DNS y Kerberos.</li>
+    <li>Los seis tipos de objeto: 300 usuarios, 301 equipos, 308 grupos, 21 OU, 22 GPO y 1 dominio.</li>
+    <li>Por qué un hash o un ticket en memoria valen casi como la contraseña.</li>
+    <li>Por qué <span class="tipo">HAS_SESSION</span> va del equipo al usuario.</li>
+    <li>Cómo el anidamiento de grupos produce privilegios efectivos: la cerradura transitiva.</li>
+    <li>Qué permiten las ACL, el acceso remoto, la delegación y <span class="tipo">DC_SYNC</span>.</li>
+    <li>Por qué <span class="tipo">CONTAINS</span> y <span class="tipo">GP_LINK</span> son estructurales y nunca se cortan.</li>
+    <li>Qué significa A -> B y por qué una ruta de ataque es un camino dirigido.</li>
+  </ul>
+</section>
+<section class="slide oscura seccion" data-seccion="Atacante, defensor y casos de uso">
+  <div class="numero">2</div>
+  <h2>Atacante, defensor y casos de uso</h2>
+  <ul class="puntos">
+    <li>Modelo de amenaza y ciclo del atacante, con las tácticas de MITRE ATT&amp;CK</li>
+    <li>Dos escaladas reales del dataset, salto a salto, con la defensa de cada salto</li>
+    <li>Lo que muestra el grafo y no muestra una lista de permisos</li>
+    <li>Prevención, detección y la defensa como problema de optimización</li>
+    <li>Casos de uso de la herramienta, cada uno con su subcomando o vista</li>
+    <li>Límites del modelo y uso ético</li>
+  </ul>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Punto de partida</div>
+  <h2>Modelo de amenaza</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Qué supone el análisis</h3>
+      <ul class="puntos">
+        <li><b>Una cuenta común ya comprometida</b> es el punto de apoyo, por ejemplo tras un correo de phishing. No tiene ningún privilegio.</li>
+        <li><b>El atacante conoce el directorio</b>: por defecto cualquier usuario autenticado puede consultar casi todo (usuarios, grupos, pertenencias, equipos y permisos).</li>
+        <li><b>Busca un objetivo de alto valor</b>: DOMAIN ADMINS o cualquiera de los 6 del dataset.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Cómo se traduce al grafo</h3>
+      <p>El atacante es un nodo de origen. Cada arista A -&gt; B dice que quien controla A puede llegar a controlar B. Su pregunta: ¿existe un camino desde su nodo hasta el objetivo?</p>
+      <div class="nota ambar">Es un análisis de peor caso con supuesto de brecha: no pregunta si alguien entrará, sino hasta dónde llega si entra. En un dominio real estos datos los recolecta SharpHound, el recolector de BloodHound, con una cuenta común. Este dataset es ficticio.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Cómo avanza un ataque</div>
+  <h2>El ciclo del atacante</h2>
+  <div class="dos">
+    <div>
+      <p>Cada fase es un tramo del recorrido. Entre paréntesis, la táctica de MITRE ATT&amp;CK:</p>
+      <ul class="puntos">
+        <li><b>Punto de apoyo</b> (Initial Access): una cuenta común.</li>
+        <li><b>Reconocimiento</b> (Discovery): leer el directorio y sus aristas.</li>
+        <li><b>Movimiento lateral</b> (Lateral Movement): saltar a otros equipos.</li>
+        <li><b>Escalada</b> (Privilege Escalation, Credential Access): tomar identidades con más permisos.</li>
+        <li><b>Control del dominio</b>: llegar al nivel 0.</li>
+      </ul>
+      <div class="nota">En ATT&amp;CK, Reconnaissance es lo previo a entrar; explorar el dominio desde dentro es Discovery.</div>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/ciclo.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Grafo ilustrativo en tres zonas (estaciones, servidores y núcleo de nivel 0): el atacante recorre las cinco fases hasta el control del dominio.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Caso real del dataset</div>
+  <h2>Escalada real en tres saltos</h2>
+  <div class="dos">
+    <div>
+      <p><b>CaronOstrye16</b> solo pertenece a DOMAIN USERS. Aun así llega a DOMAIN ADMINS:</p>
+      <ul class="puntos">
+        <li><span class="tipo">EXECUTE_DCOM</span> sobre el equipo COMP00045 (peso 3).</li>
+        <li><span class="tipo">HAS_SESSION</span>: PingFrankel165 tiene sesión abierta en ese equipo (peso 4).</li>
+        <li><span class="tipo">MEMBER_OF</span>: PingFrankel165 es miembro de DOMAIN ADMINS (peso 1).</li>
+      </ul>
+      <p>BFS: 3 saltos. Dijkstra: la misma ruta, peso 3 + 4 + 1 = 8.</p>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/escalada.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Caso real: la ruta CaronOstrye16, COMP00045, PingFrankel165, DOMAIN ADMINS se enciende en naranja; alrededor, NV_COMPUTERS (CONTAINS), GPO_13 (GP_LINK) y DOMAIN USERS.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Caso real: CaronOstrye16</div>
+  <h2>Salto a salto: qué gana el atacante</h2>
+  <div class="tres">
+    <div class="tarjeta atacante">
+      <h3>1. EXECUTE_DCOM</h3>
+      <p>Peso 3. CaronOstrye16 puede ejecutar código de forma remota en COMP00045 mediante DCOM.</p>
+      <p><b>Gana:</b> presencia en un equipo ajeno. El modelo, igual que BloodHound, lo toma como control del equipo: es un supuesto de peor caso.</p>
+    </div>
+    <div class="tarjeta atacante">
+      <h3>2. HAS_SESSION</h3>
+      <p>Peso 4, el más caro del modelo. PingFrankel165 tiene una sesión abierta en COMP00045 y su credencial queda en la memoria del equipo.</p>
+      <p><b>Gana:</b> la identidad de un administrador sin conocer su contraseña. Por eso la arista va del equipo al usuario.</p>
+    </div>
+    <div class="tarjeta atacante">
+      <h3>3. MEMBER_OF</h3>
+      <p>Peso 1. PingFrankel165 es miembro directo de DOMAIN ADMINS.</p>
+      <p><b>Gana:</b> los permisos del grupo, que tiene control total (<span class="tipo">GENERIC_ALL</span>) sobre 300 usuarios, 300 equipos y 300 grupos, y derechos de replicación sobre el dominio.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Caso real: CaronOstrye16</div>
+  <h2>Qué defensa habría cortado cada salto</h2>
+  <p>Las tres aristas son imprescindibles: <code>cortes</code> marca a COMP00045 y PingFrankel165 como vértices de corte, y quitar cualquiera de los tres accesos deja a CaronOstrye16 sin ruta. Bastaba una de estas medidas:</p>
+  <table class="datos">
+    <tr><th>Salto</th><th>Acceso</th><th>Qué obtiene el atacante</th><th>Defensa que lo habría evitado</th></tr>
+    <tr><td>1</td><td><span class="tipo">EXECUTE_DCOM</span></td><td>Ejecutar código en COMP00045, un equipo que no es suyo</td><td>Mínimo privilegio: retirar la ejecución remota a quien no la necesita y filtrar el tráfico entre estaciones</td></tr>
+    <tr><td>2</td><td><span class="tipo">HAS_SESSION</span></td><td>La credencial de PingFrankel165, que quedó en memoria</td><td>Modelo de niveles: una cuenta de DOMAIN ADMINS no inicia sesión en estaciones; Protected Users reduce lo que queda en memoria</td></tr>
+    <tr><td>3</td><td><span class="tipo">MEMBER_OF</span></td><td>Todos los permisos de DOMAIN ADMINS</td><td>Cuenta de administración separada: la cuenta de uso diario no es miembro; pocos miembros y revisados</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Segundo caso real</div>
+  <h2>Segundo caso: una pertenencia basta</h2>
+  <div class="dos mitad">
+    <div>
+<pre class="codigo">PiedadFlatley255
+  -MEMBER_OF-&gt; DOMAIN ADMINS                  <span class="c">peso 1</span>
+  -ADMIN_TO-&gt;  FLLABDC (controlador)          <span class="c">peso 1</span>
+  -MEMBER_OF-&gt; ENTERPRISE DOMAIN CONTROLLERS  <span class="c">peso 1</span></pre>
+      <ul class="puntos">
+        <li>BFS: 3 saltos. Dijkstra: el mismo camino, peso 3.</li>
+        <li>Sin tomar credenciales ni moverse entre equipos: comprometer la cuenta ya es comprometer el dominio.</li>
+        <li>Alcanza 928 objetos y 4 de alto valor: DOMAIN ADMINS a 1 salto, el dominio a 2 y los dos grupos de controladores a 3.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Por qué una sola pertenencia basta</h3>
+      <p>Los saltos 2 y 3 son normales en cualquier dominio: DOMAIN ADMINS administra el controlador FLLABDC y el controlador es miembro de ENTERPRISE DOMAIN CONTROLLERS.</p>
+      <p>El error es el primero. La cuenta tiene 6 grupos directos; cuatro son HR00037, HR00172, HR00194 y HR00205, y por el nombre parece de recursos humanos. Aun así está en DOMAIN ADMINS.</p>
+      <div class="nota alerta"><code>cortes</code> devuelve DOMAIN ADMINS y FLLABDC, que no se pueden eliminar. Lo único revocable es esa pertenencia.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Vista del defensor</div>
+  <h2>Lo que el grafo ve y la lista no</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="n">147</div><div class="t">objetos llegan a DOMAIN ADMINS</div></div>
+    <div class="kpi"><div class="n">38 / 300</div><div class="t">usuarios con ruta (12.7%)</div></div>
+    <div class="kpi"><div class="n">15</div><div class="t">miembros directos (1 salto)</div></div>
+    <div class="kpi"><div class="n">23</div><div class="t">por rutas de 3 a 9 saltos</div></div>
+  </div>
+  <div class="dos mitad">
+    <div>
+      <p><code>quien-llega</code> hace un BFS inverso desde el objetivo: 46 equipos, 38 usuarios, 21 OU, 21 GPO, 20 grupos y el dominio.</p>
+      <p><code>permisos --usuario CaronOstrye16</code> devuelve un solo grupo: DOMAIN USERS. Nada administrativo, y sin embargo está entre los 38.</p>
+    </div>
+    <div>
+      <p>Una lista de permisos, incluso con los grupos anidados resueltos, mira un tipo de arista y un objeto a la vez. El riesgo está en la composición de aristas de muchos objetos: un permiso de DCOM, una sesión ajena y una pertenencia ajena.</p>
+      <div class="nota">Eso es alcanzabilidad, y solo aparece al recorrer el grafo.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Qué hace el defensor</div>
+  <h2>Prevenir: quitar aristas antes</h2>
+  <p>Cada medida elimina o encarece aristas, y el mismo grafo mide su efecto.</p>
+  <table class="datos">
+    <tr><th>Medida</th><th>Arista que elimina o encarece</th></tr>
+    <tr><td>Mínimo privilegio</td><td>Permisos y pertenencias que sobran: cada uno es una arista</td></tr>
+    <tr><td>Modelo de niveles (0 núcleo, 1 servidores, 2 estaciones)</td><td>Toda arista de un nivel bajo hacia uno más alto</td></tr>
+    <tr><td>Cuentas de administración separadas</td><td><span class="tipo">MEMBER_OF</span> privilegiado en la cuenta de uso diario</td></tr>
+    <tr><td>Sin sesiones privilegiadas en equipos de menor nivel</td><td><span class="tipo">HAS_SESSION</span> de cuentas de nivel 0 fuera del nivel 0</td></tr>
+    <tr><td>Contraseña local única por equipo (LAPS)</td><td>Una ruta que el grafo no modela: la misma clave abriría todos los equipos</td></tr>
+    <tr><td>Grupo Protected Users</td><td>Encarece <span class="tipo">HAS_SESSION</span> y bloquea la delegación de esas cuentas</td></tr>
+    <tr><td>Restringir la delegación</td><td><span class="tipo">ALLOWED_TO_DELEGATE</span> solo hacia servicios necesarios</td></tr>
+    <tr><td>Revisar ACL y propietarios</td><td><span class="tipo">GENERIC_ALL</span> <span class="tipo">GENERIC_WRITE</span> <span class="tipo">WRITE_DACL</span> <span class="tipo">WRITE_OWNER</span> <span class="tipo">OWNS</span></td></tr>
+    <tr><td>Limitar quién replica el directorio</td><td><span class="tipo">GET_CHANGES</span> <span class="tipo">GET_CHANGES_ALL</span> <span class="tipo">DC_SYNC</span> solo en nivel 0</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Qué hace el defensor</div>
+  <h2>Detectar: vigilar las aristas nuevas</h2>
+  <p>Un ataque crea o usa aristas. Detectar es mirar dónde aparecen las que no deberían existir:</p>
+  <table class="datos">
+    <tr><th>Qué vigilar</th><th>Qué es en el grafo</th><th>Por qué alerta</th></tr>
+    <tr><td>Cambios en grupos privilegiados</td><td>Nueva <span class="tipo">MEMBER_OF</span> hacia un objetivo</td><td>Es un salto directo al núcleo; debe ser raro y aprobado</td></tr>
+    <tr><td>Inicios de sesión de cuentas privilegiadas</td><td><span class="tipo">HAS_SESSION</span> de nivel 0 en un equipo de menor nivel</td><td>La credencial queda al alcance de quien controle ese equipo</td></tr>
+    <tr><td>Replicación pedida por un equipo que no es controlador</td><td>Uso de <span class="tipo">GET_CHANGES</span> y <span class="tipo">GET_CHANGES_ALL</span> fuera de lugar</td><td>Solo los controladores replican; otro origen busca los secretos del dominio</td></tr>
+    <tr><td>Cambios en ACL y propietarios sensibles</td><td>Nuevas <span class="tipo">GENERIC_ALL</span> <span class="tipo">WRITE_DACL</span> <span class="tipo">WRITE_OWNER</span></td><td>Preparan una escalada sin tocar los grupos</td></tr>
+    <tr><td>El grafo entero, de forma periódica</td><td><code>quien-llega</code> y <code>defensa</code> sobre un export nuevo</td><td>Si la exposición sube, alguien abrió una ruta</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Defensa como optimización</div>
+  <h2>Defender es optimizar</h2>
+  <div class="dos">
+    <div>
+      <p>El defensor busca el menor número de accesos cuya revocación deja el objetivo sin rutas. Es flujo máximo y corte mínimo:</p>
+      <ul class="puntos">
+        <li><b>1 Medir</b>: 38 de 300 usuarios (12.7%) llegan a DOMAIN ADMINS.</li>
+        <li><b>2 Calcular</b>: Edmonds-Karp da flujo máximo 15 = corte mínimo.</li>
+        <li><b>3 Revocar</b>: 15 accesos, todos <span class="tipo">MEMBER_OF</span> hacia DOMAIN ADMINS.</li>
+        <li><b>4 Verificar</b>: otro BFS sin esos accesos da 0 de 300.</li>
+      </ul>
+      <p><code>python main.py defensa</code></p>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/defensor.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Grafo ilustrativo con las cifras reales: seis usuarios llegan a DOMAIN ADMINS por tres MEMBER_OF; medir (38 de 300), cortar, revocar y verificar (0 de 300).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Defensa como optimización</div>
+  <h2>Cómo leer el plan de 15 accesos</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Por qué exactamente 15</h3>
+      <p>Con <code>--fuentes usuarios</code>, los 15 miembros de DOMAIN ADMINS también son fuentes. Cada uno es una ruta de un salto, disjunta de las demás, así que ningún corte puede tener menos de 15 accesos (Menger). Como el grupo tiene grado de entrada 15, esos 15 bastan.</p>
+      <div class="nota ambar">El óptimo vacía el grupo. Es correcto para el modelo, pero alguien debe administrar el dominio: el plan marca el límite matemático y el defensor decide qué cuentas siguen.</div>
+    </div>
+    <div>
+      <h3>Medidas parciales</h3>
+      <p>Exposición recalculada con <code>riesgo.exposicion_tras_corte</code>, la función que usa <code>defensa</code>. Quitar solo las sesiones casi no cambia nada: una ACL sobre una cuenta administradora sostiene 21 rutas.</p>
+      <table class="datos">
+        <tr><th>Accesos quitados</th><th>Usuarios con ruta</th></tr>
+        <tr><td>Ninguno</td><td>38 / 300</td></tr>
+        <tr><td>Las 19 sesiones de los miembros de DOMAIN ADMINS</td><td>36 / 300</td></tr>
+        <tr><td>Además, <span class="tipo">GENERIC_WRITE</span> de IT00195 sobre DanielleGallery238</td><td>15 / 300</td></tr>
+        <tr><td>Corte mínimo: los 15 <span class="tipo">MEMBER_OF</span></td><td>0 / 300</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Dos lecturas del mismo grafo</div>
+  <h2>Atacante contra defensor</h2>
+  <p>Una idea muy citada en seguridad (John Lambert, 2015): los defensores piensan en listas y los atacantes en grafos. El proyecto le da el grafo al defensor.</p>
+  <div class="dos mitad">
+    <div class="tarjeta atacante">
+      <h3>Atacante: le basta un camino</h3>
+      <ul class="puntos">
+        <li>Parte de su nodo y mira hacia adelante: qué alcanza (<code>alcance</code>, BFS).</li>
+        <li>Elige la ruta de menor esfuerzo (Dijkstra); si una se cierra, prueba otra.</li>
+        <li>Combina aristas de distinto tipo y de distintos responsables: un permiso de DCOM, una sesión, un grupo.</li>
+        <li>Gana si existe al menos un camino.</li>
+      </ul>
+    </div>
+    <div class="tarjeta defensor">
+      <h3>Defensor: debe cerrarlos todos</h3>
+      <ul class="puntos">
+        <li>Parte del objetivo y mira hacia atrás: quién llega (<code>quien-llega</code>, BFS inverso).</li>
+        <li>Considera todas las fuentes a la vez, unidas a una superfuente.</li>
+        <li>Busca el menor conjunto de accesos que corta todas las rutas: el corte mínimo, igual al máximo de rutas disjuntas.</li>
+        <li>Gana si no queda ningún camino, y lo comprueba con otro recorrido.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Casos de uso</div>
+  <h2>Auditoría y triage</h2>
+  <div class="dos mitad">
+    <div class="tarjeta">
+      <h3>Auditoría: quién llega al objetivo</h3>
+      <p>Todos los objetos con alguna ruta hasta un objetivo dado.</p>
+<pre class="codigo">python main.py quien-llega</pre>
+      <p>Por omisión, DOMAIN ADMINS: 147 objetos (46 equipos, 38 usuarios, 21 OU, 21 GPO, 20 grupos y el dominio).</p>
+      <p>En la web: al elegir el objetivo se dibuja su subgrafo (148 nodos, 601 aristas); la vista radial pone cada objeto en el anillo de su distancia.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Triage: una cuenta comprometida</h3>
+      <p>Qué alcanza, por dónde llega y qué la detiene.</p>
+<pre class="codigo">python main.py alcance --usuario X
+python main.py camino --origen X --destino Y
+python main.py cortes --origen X</pre>
+      <p>Con CaronOstrye16: 928 objetos y 4 de alto valor; ruta de 3 saltos y peso 8; vértices de corte COMP00045 y PingFrankel165, los primeros puntos a contener.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Casos de uso</div>
+  <h2>Priorizar y remediar</h2>
+  <div class="dos mitad">
+    <div class="tarjeta">
+      <h3>Priorización: los objetos puente</h3>
+<pre class="codigo">python main.py centralidad</pre>
+      <p>Brandes sobre el subgrafo de rutas hacia DOMAIN ADMINS (144 aristas): COMP00083 76, IT00161 54, VirgenAurand248 49, RegeniaBowerman57 49.</p>
+      <p>COMP00083 guarda la sesión de VirgenAurand248, miembro de DOMAIN ADMINS: por ese equipo pasan más caminos mínimos que por ningún otro objeto. Se revisa primero.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Remediación mínima con prueba</h3>
+<pre class="codigo">python main.py defensa --fuentes usuarios</pre>
+      <p>15 accesos <span class="tipo">MEMBER_OF</span> a revocar. El flujo máximo vale 15: hay 15 rutas disjuntas, así que ningún plan de 14 funciona. Un BFS independiente confirma 0 de 300.</p>
+      <p>Con <code>--fuentes todos</code> (947 objetos no críticos) el corte sigue en 15 y la exposición baja de 142/947 (15.0%) a 0.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Casos de uso</div>
+  <h2>Verificar, simular y formar</h2>
+  <div class="tres">
+    <div class="tarjeta defensor">
+      <h3>Verificar el cambio</h3>
+      <p><code>defensa</code> ya simula el después antes de tocar nada. Aplicado el cambio real, se exporta otra vez el directorio en el mismo formato y se repiten <code>defensa</code> y <code>quien-llega</code> con la opción global <code>--datos</code>, que va antes del subcomando.</p>
+      <p>La exposición debe dar 0; si no, quedó una ruta.</p>
+    </div>
+    <div class="tarjeta defensor">
+      <h3>Qué pasaría si</h3>
+      <p>En la web, Dijkstra permite ajustar el peso de cada tipo de acceso (de 0 a 99).</p>
+      <p>Con <span class="tipo">HAS_SESSION</span> en 10, como si las credenciales estuvieran mejor protegidas, la ruta de CaronOstrye16 no cambia y su peso sube de 8 a 14: no tiene alternativa. Si la ruta cambiara, habría otra vía que cerrar.</p>
+    </div>
+    <div class="tarjeta defensor">
+      <h3>Formación</h3>
+      <p>La web reproduce BFS, Dijkstra y el plan de defensa paso a paso, con inicio, anterior, reproducir, siguiente, fin y velocidades de 1x a 8x.</p>
+      <p>El visor offline es la misma página en un solo archivo, sin servidor. Sirve para ver por qué cada algoritmo da su resultado.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Alcance honesto</div>
+  <h2>Límites y ética</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Límites del modelo</h3>
+      <ul class="puntos">
+        <li><b>Dataset ficticio</b>: las cifras ilustran el método, no describen una empresa real.</li>
+        <li><b>Pesos ordinales</b> de 1 a 4: ordenan esfuerzo, no son probabilidades. Con probabilidades se usaría -log(p) como peso; no está implementado.</li>
+        <li><b>Lo estructural no se revoca</b>: <span class="tipo">CONTAINS</span> y <span class="tipo">GP_LINK</span> tienen capacidad infinita. Si la única ruta es estructural, el plan no la corta y la verificación falla.</li>
+        <li><b>El grafo es una foto</b>: las sesiones cambian; el análisis debe repetirse.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Uso ético</h3>
+      <ul class="puntos">
+        <li>Uso defensivo: medir y reducir la exposición de entornos propios o con autorización.</li>
+        <li>La herramienta no explota nada: lee un export y calcula.</li>
+        <li>Peor caso a propósito: supone que toda arista es utilizable.</li>
+      </ul>
+      <div class="nota ok">Un atacante puede construir el mismo grafo. Conviene que el defensor lo mire primero.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Atacante, defensor y casos de uso">
+  <div class="eyebrow">Parte 2</div>
+  <h2>Resumen de la parte</h2>
+  <ul class="puntos">
+    <li>El atacante parte de una cuenta común y lee el directorio; su ciclo (Initial Access, Discovery, Lateral Movement, Privilege Escalation, Credential Access) es un recorrido por aristas.</li>
+    <li>CaronOstrye16, con solo DOMAIN USERS, llega a DOMAIN ADMINS en 3 saltos y peso 8: un permiso de DCOM, una sesión ajena y una pertenencia ajena.</li>
+    <li>PiedadFlatley255 muestra que una pertenencia mal asignada basta: 3 saltos y peso 3 hasta ENTERPRISE DOMAIN CONTROLLERS.</li>
+    <li>El riesgo es alcanzabilidad: 147 objetos y 38 de 300 usuarios llegan a DOMAIN ADMINS, aunque ninguna lista de permisos lo diga.</li>
+    <li>Prevenir es quitar o encarecer aristas; detectar es vigilar las que aparecen.</li>
+    <li>Defender es optimizar: 15 accesos <span class="tipo">MEMBER_OF</span>, óptimo por flujo máximo - corte mínimo y verificado (de 38/300 a 0/300).</li>
+    <li>La herramienta sirve para auditar, hacer triage, priorizar, remediar, verificar, simular y formar, siempre con uso defensivo.</li>
+  </ul>
+</section>
+<section class="slide oscura seccion" data-seccion="Fundamento matemático">
+  <div class="numero">3</div>
+  <h2>Fundamento matemático</h2>
+  <ul class="puntos">
+    <li>Grafo dirigido, listas de adyacencia y recorridos: BFS, DFS y grafo inverso</li>
+    <li>Caminos de menor peso con Dijkstra</li>
+    <li>Relaciones binarias, cerradura transitiva y Warshall</li>
+    <li>Componentes fuertemente conexas (Tarjan) y centralidad de intermediación (Brandes)</li>
+    <li>Vértices de corte, redes de flujo y Edmonds-Karp</li>
+    <li>Flujo máximo, corte mínimo y teorema de Menger aplicados al directorio</li>
+  </ul>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Definiciones</div>
+  <h2>El directorio como grafo dirigido</h2>
+  <div class="dos mitad">
+    <div>
+      <div class="formula">G = (V, E)   V: objetos, E: accesos
+e = (u, v, tipo)   par ordenado con tipo
+grado_sal(v) = |{e en E : origen(e) = v}|
+grado_ent(v) = |{e en E : destino(e) = v}|
+suma de grado_sal = suma de grado_ent = |E|
+camino: v0 -&gt; v1 -&gt; ... -&gt; vk  (k saltos)
+u -&gt;* v  si hay un camino de u a v</div>
+      <ul class="puntos">
+        <li><b>Par ordenado:</b> (u, v) no es (v, u). La arista dice que quien controla u puede llegar a controlar v.</li>
+        <li><b>Multigrafo:</b> E es un multiconjunto; entre dos objetos puede haber varias aristas de tipo distinto (paralelas).</li>
+        <li><b>Alcanzabilidad:</b> -&gt;* es reflexiva y transitiva, pero en general no es simétrica.</li>
+      </ul>
+    </div>
+    <div>
+      <table class="datos">
+        <tr><th>Medida en el dataset</th><th>Valor</th></tr>
+        <tr><td>Vértices (objetos)</td><td>953</td></tr>
+        <tr><td>Aristas (accesos con tipo)</td><td>4698</td></tr>
+        <tr><td>Pares ordenados distintos</td><td>4385</td></tr>
+        <tr><td>Pares con aristas paralelas</td><td>306 (hasta 6 por par)</td></tr>
+        <tr><td>Lazos (u, u)</td><td>0</td></tr>
+        <tr><td>Mayor grado de salida</td><td>DOMAIN ADMINS: 1206</td></tr>
+        <tr><td>Mayor grado de entrada</td><td>DOMAIN USERS y DOMAIN COMPUTERS: 300</td></tr>
+        <tr><td>Grado de entrada de DOMAIN ADMINS</td><td>15</td></tr>
+        <tr><td>Densidad 4698 / (953 x 952)</td><td>0.52 %</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Representación</div>
+  <h2>Listas de adyacencia directa e inversa</h2>
+  <div class="dos">
+    <div>
+      <p>Cada arista se guarda dos veces: en <code>_salida[origen]</code> y en <code>_entrada[destino]</code>.</p>
+      <ul class="puntos">
+        <li><code>salida(v)</code>: sucesores. Responde qué alcanza v (BFS, Dijkstra, Tarjan).</li>
+        <li><code>entrada(v)</code>: predecesores. Responde quién llega a v sin construir otro grafo.</li>
+        <li>Memoria O(V + E): dos referencias por arista. Los vecinos de v cuestan O(grado(v)).</li>
+        <li>Una matriz ocuparía 953 x 953 = 908 209 celdas para solo 4385 pares.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/adyacencia.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Grafo A, B, C, D: cada arista llena la lista de salida del origen y la de entrada del destino.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Recorridos</div>
+  <h2>BFS: búsqueda en anchura</h2>
+  <div class="dos mitad">
+    <div>
+      <p>BFS explora por niveles: primero los vecinos del origen, luego los vecinos de esos, y así. Una cola FIFO (<code>deque</code>) impone ese orden.</p>
+      <ul class="puntos">
+        <li>Un nodo se marca al descubrirlo, así que entra a la cola una sola vez.</li>
+        <li><code>arbol[v]</code> guarda la arista con que se descubrió v. Gana el primer padre; el orden de <code>salida()</code>, que es el del archivo, fija los desempates.</li>
+        <li>Con <code>invertido=True</code> recorre <code>entrada(v)</code> y responde quién alcanza al origen.</li>
+        <li>Cada nodo sale una vez de la cola y cada arista se mira una vez: O(V + E).</li>
+        <li>Desde PiedadFlatley255 se alcanzan 928 objetos, 4 de ellos de alto valor.</li>
+      </ul>
+    </div>
+    <div>
+      <pre class="codigo"><span class="k">def</span> bfs_arbol(G, origen, invertido=False):
+  vecinos = G.entrada <span class="k">si</span> invertido, <span class="k">si no</span> G.salida
+  arbol = {origen: None}
+  cola = deque([origen])
+  <span class="k">mientras</span> cola:
+    actual = cola.popleft()
+    <span class="k">para</span> arista <span class="k">en</span> vecinos(actual):
+      sig = extremo(arista)  <span class="c"># destino (u origen)</span>
+      <span class="k">si</span> sig <span class="k">no esta en</span> arbol:
+        arbol[sig] = arista  <span class="c"># primer padre gana</span>
+        cola.append(sig)
+  <span class="k">devolver</span> arbol</pre>
+      <div class="nota">El árbol BFS tiene un padre por nodo alcanzado (salvo el origen): |árbol| - 1 aristas y ningún ciclo.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Recorridos</div>
+  <h2>Por qué BFS da el mínimo de saltos</h2>
+  <div class="dos">
+    <div>
+      <p><b>Invariante:</b> la cola está ordenada por distancia y contiene a lo sumo dos niveles consecutivos, d y d + 1.</p>
+      <ul class="puntos">
+        <li>Por inducción, si v se descubre desde u, dist(v) = dist(u) + 1 y ya no cambia.</li>
+        <li>El camino del árbol del origen a v es un camino mínimo.</li>
+        <li><code>reconstruir_camino</code> sigue <code>arbol[v]</code> hasta el origen e invierte la lista.</li>
+        <li>PiedadFlatley255 llega a ENTERPRISE DOMAIN CONTROLLERS en 3 saltos.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/bfs.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>BFS desde S: frontera hueca, expandidos rellenos; cola S A B C D E F G T y camino mínimo S, A, E, T.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Recorridos</div>
+  <h2>DFS iterativo frente a BFS</h2>
+  <div class="dos mitad">
+    <div>
+      <pre class="codigo"><span class="k">def</span> dfs_orden(G, origen):
+  visitados = set(); orden = []
+  pila = [origen]
+  <span class="k">mientras</span> pila:
+    actual = pila.pop()            <span class="c"># LIFO</span>
+    <span class="k">si</span> actual <span class="k">en</span> visitados: <span class="k">continuar</span>
+    visitados.add(actual)
+    orden.append(actual)
+    <span class="k">para</span> arista <span class="k">en</span> reversed(G.salida(actual)):
+      <span class="k">si</span> arista.destino <span class="k">no en</span> visitados:
+        pila.append(arista.destino)
+  <span class="k">devolver</span> orden</pre>
+      <p>Los sucesores se apilan al revés para visitarlos en el orden natural de las aristas. Un nodo puede apilarse varias veces (la pila llega a O(E)); se descarta al sacarlo si ya se visitó.</p>
+    </div>
+    <div>
+      <div class="nota"><code>dfs_orden</code> devuelve el orden de visita en profundidad. La misma idea, con una pila de marcos (nodo, posición), es la base de Tarjan en <code>componentes.py</code>.</div>
+      <table class="datos">
+        <tr><th></th><th>BFS</th><th>DFS</th></tr>
+        <tr><td>Estructura</td><td>cola (FIFO)</td><td>pila (LIFO)</td></tr>
+        <tr><td>Marca un nodo</td><td>al descubrirlo</td><td>al sacarlo de la pila</td></tr>
+        <tr><td>Orden</td><td>por niveles</td><td>una rama hasta el fondo</td></tr>
+        <tr><td>Saltos mínimos</td><td>sí</td><td>no</td></tr>
+        <tr><td>Alcanzables</td><td colspan="2">el mismo conjunto</td></tr>
+        <tr><td>Costo</td><td colspan="2">O(V + E)</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Grafo inverso</div>
+  <h2>Quién llega al objetivo: un BFS</h2>
+  <div class="dos">
+    <div>
+      <p>El grafo inverso G^T tiene las mismas aristas al revés: (u, v) en E si y solo si (v, u) en E^T.</p>
+      <ul class="puntos">
+        <li>u alcanza t en G si y solo si t alcanza u en G^T.</li>
+        <li>Un BFS desde t en G^T da todos los que llegan a t en O(V + E), en vez de un BFS por cada origen.</li>
+        <li>No se copia el grafo: <code>alcanzan_a</code> recorre <code>entrada(v)</code>.</li>
+        <li>147 objetos llegan a DOMAIN ADMINS: 46 equipos, 38 usuarios, 21 OU, 21 GPO, 20 grupos y el dominio.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/inverso.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Aristas invertidas y BFS desde el objetivo: 7 objetos lo alcanzan y 2 no (grafo ilustrativo).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Caminos con pesos</div>
+  <h2>Grafo ponderado y relajación</h2>
+  <div class="dos mitad">
+    <div>
+      <div class="formula">w(P) = suma de w(e) para e en P
+d(s, v) = min w(P), P de s a v
+relajar(u, v):
+  si d[u] + w(u, v) &lt; d[v]: mejorar d[v]</div>
+      <table class="datos">
+        <tr><th>Peso</th><th>Tipos de acceso (pesos.py)</th></tr>
+        <tr><td>1</td><td>MEMBER_OF, CONTAINS, ADMIN_TO, GENERIC_ALL, DC_SYNC, GET_CHANGES, GET_CHANGES_ALL</td></tr>
+        <tr><td>2</td><td>GP_LINK, OWNS, WRITE_DACL, WRITE_OWNER, GENERIC_WRITE</td></tr>
+        <tr><td>3</td><td>CAN_RDP, EXECUTE_DCOM, ALLOWED_TO_DELEGATE</td></tr>
+        <tr><td>4</td><td>HAS_SESSION</td></tr>
+      </table>
+    </div>
+    <div>
+      <pre class="codigo"><span class="k">def</span> dijkstra(G, origen):
+  dist = {origen: 0}; previo = {origen: None}
+  monticulo = [(0, origen)]; cerrados = set()
+  <span class="k">mientras</span> monticulo:
+    d, u = heappop(monticulo)  <span class="c"># menor (dist, nodo)</span>
+    <span class="k">si</span> u <span class="k">en</span> cerrados: <span class="k">continuar</span>   <span class="c"># copia vieja</span>
+    cerrados.add(u)
+    <span class="k">para</span> arista <span class="k">en</span> G.salida(u):
+      v = arista.destino
+      cand = d + peso(arista.tipo)
+      <span class="k">si</span> v <span class="k">no en</span> dist <span class="k">o</span> cand &lt; dist[v]:
+        dist[v] = cand; previo[v] = arista
+        heappush(monticulo, (cand, v))
+  <span class="k">devolver</span> dist, previo</pre>
+      <div class="nota">Escala ordinal de esfuerzo: 1 es trivial y 4 exige más trabajo. El peso por omisión (3) nunca se aplica: la tabla cubre los 16 tipos del dataset.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Caminos con pesos</div>
+  <h2>Dijkstra con montículo perezoso</h2>
+  <div class="dos">
+    <div>
+      <p><code>heapq</code> no permite disminuir una clave. Se usa borrado perezoso:</p>
+      <ul class="puntos">
+        <li>Cada mejora empuja una tupla nueva; las viejas se quedan en el montículo.</li>
+        <li>Si sale un nodo ya cerrado, se ignora.</li>
+        <li>Solo se actualiza con distancia estrictamente menor: en un empate queda el primer previo.</li>
+        <li>Con igual distancia, el montículo desempata por el id del nodo.</li>
+        <li>A lo sumo E + 1 inserciones de costo O(log V): O((V + E) log V).</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/dijkstra.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>HAS_SESSION directo (peso 4) contra MEMBER_OF + MEMBER_OF (2) y CAN_RDP + ADMIN_TO (4): gana el de peso 2.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Caminos con pesos</div>
+  <h2>Por qué Dijkstra es correcto</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Corrección con pesos no negativos</h3>
+      <ul class="puntos">
+        <li><b>Afirmación:</b> cuando u sale del montículo y se cierra, dist[u] = d(s, u).</li>
+        <li>Suponga que u es el primero que falla. Sea P un camino mínimo de s a u y (x, y) la primera arista de P que sale de los cerrados.</li>
+        <li>x se cerró con su valor exacto y relajó (x, y): dist[y] = d(s, y) &lt;= d(s, u) &lt; dist[u].</li>
+        <li>Entonces y debía salir antes que u: contradicción. El paso d(s, y) &lt;= d(s, u) usa que w &gt;= 0; en pesos.py todos valen de 1 a 4.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Saltos contra esfuerzo</h3>
+      <div class="nota">El único camino de 3 saltos de CaronOstrye16 ya es el de menor esfuerzo: EXECUTE_DCOM (3) + HAS_SESSION (4) + MEMBER_OF (1) = 8. Aquí los dos criterios coinciden; en la prueba sintética no.</div>
+      <table class="datos">
+        <tr><th></th><th>BFS</th><th>Dijkstra</th></tr>
+        <tr><td>Minimiza</td><td>saltos</td><td>suma de pesos</td></tr>
+        <tr><td>Estructura</td><td>cola</td><td>montículo</td></tr>
+        <tr><td>Costo</td><td>O(V + E)</td><td>O((V + E) log V)</td></tr>
+        <tr><td>Prueba sintética</td><td>a -&gt; t: 1 salto, peso 4</td><td>a -&gt; b -&gt; t: peso 2</td></tr>
+        <tr><td>CaronOstrye16 a DOMAIN ADMINS</td><td>3 saltos, peso 8</td><td>el mismo camino, peso 8</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Relaciones</div>
+  <h2>Relaciones binarias y cerradura</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Una relación binaria sobre A es un subconjunto R de A x A. En el proyecto, x R y si x es miembro directo del grupo y (<span class="tipo">MEMBER_OF</span>).</p>
+      <div class="formula">reflexiva:  x R x para todo x
+simétrica:  x R y  =&gt;  y R x
+transitiva: x R y, y R z  =&gt;  x R z
+R+ = unión de R^k para k &gt;= 1</div>
+      <ul class="puntos">
+        <li>No es reflexiva: el dataset no tiene lazos.</li>
+        <li>No es simétrica, aunque BIDNESS00144 y BIDNESS00145 son miembros uno del otro; por eso tampoco es antisimétrica.</li>
+        <li>No es transitiva: los permisos efectivos salen de R+, la menor relación transitiva que contiene a R.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Matriz booleana y Warshall</h3>
+      <p>Con A = {x_1, ..., x_n}, M[i][j] = 1 si x_i R x_j. Warshall admite como intermediarios x_1..x_k, uno más en cada paso:</p>
+      <div class="formula">W_0 = M
+W_k[i][j] = W_k-1[i][j]  o
+  (W_k-1[i][k]  y  W_k-1[k][j])
+W_n = matriz de R+</div>
+      <p>Por inducción en k: W_k[i][j] = 1 si y solo si hay camino de x_i a x_j con intermediarios en {x_1..x_k}. Tres ciclos anidados: O(n^3).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Cerradura transitiva</div>
+  <h2>Warshall con mapas de bits</h2>
+  <div class="dos">
+    <div>
+      <p><code>transitiva.py</code> usa solo los 308 grupos. Cada fila es un int de Python: el bit j de <code>fila[i]</code> vale 1 si el grupo i es miembro del grupo j.</p>
+      <pre class="codigo"><span class="k">para</span> k <span class="k">en</span> range(n):
+  <span class="k">para</span> i <span class="k">en</span> range(n):
+    <span class="k">si</span> fila[i] &amp; (1 &lt;&lt; k):
+      fila[i] |= fila[k]   <span class="c"># OR de fila</span></pre>
+      <ul class="puntos">
+        <li>n^2 = 94 864 pruebas de bit; cada OR une una fila entera.</li>
+        <li>16 aristas grupo -&gt; grupo; la cerradura tiene 18 bits. Los 2 nuevos son la diagonal del ciclo BIDNESS00144 &lt;-&gt; BIDNESS00145.</li>
+        <li>PiedadFlatley255: 6 grupos efectivos, todos directos.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/warshall.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Cadena G1 -&gt; G2 -&gt; G3 -&gt; G4 y su matriz de bits: para k = G1..G4 aparecen G1-&gt;G3, G1-&gt;G4 y G2-&gt;G4.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Clases de equivalencia</div>
+  <h2>Componentes fuertemente conexas</h2>
+  <div class="dos mitad">
+    <div>
+      <div class="formula">u ~ v  &lt;=&gt;  u -&gt;* v  y  v -&gt;* u</div>
+      <p>~ es de equivalencia: reflexiva (camino de longitud 0), simétrica por definición y transitiva (se concatenan caminos). Sus clases parten V: son las componentes fuertemente conexas (SCC).</p>
+      <div class="nota"><b>El condensado es un DAG.</b> Cada SCC se colapsa en un supernodo. Si hubiera un ciclo C1 -&gt; C2 -&gt; ... -&gt; C1, todos sus nodos serían mutuamente alcanzables y formarian una sola clase: contradice que cada clase es maximal. <code>grafo_condensado</code> guarda pares (ci, cj) en un conjunto, sin lazos ni repetidos.</div>
+    </div>
+    <div>
+      <div class="kpis">
+        <div class="kpi"><div class="n">828</div><div class="t">componentes (SCC)</div></div>
+        <div class="kpi"><div class="n">125</div><div class="t">objetos en la mayor</div></div>
+        <div class="kpi"><div class="n">2</div><div class="t">BIDNESS00144 y 00145</div></div>
+        <div class="kpi"><div class="n">2180</div><div class="t">aristas del DAG</div></div>
+      </div>
+      <div class="nota alerta">La SCC de 125 objetos (46 equipos, 38 usuarios, 21 OU, 18 grupos, 1 GPO y el dominio) contiene DOMAIN ADMINS, DOMAIN CONTROLLERS, ENTERPRISE DOMAIN CONTROLLERS y el dominio. Es un núcleo de control mutuo: quien controla uno de sus objetos puede llegar a controlarlos todos.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Clases de equivalencia</div>
+  <h2>Algoritmo de Tarjan</h2>
+  <div class="dos">
+    <div>
+      <p>Un solo DFS. <b>indice[v]</b>: orden de visita. <b>bajo[v]</b>: menor índice de un nodo aún en la pila al que se llega desde el subárbol de v.</p>
+      <pre class="codigo"><span class="k">para cada</span> arista v -&gt; w:
+  <span class="k">si</span> w <span class="k">no tiene</span> indice:
+    visitar(w)
+    bajo[v] = min(bajo[v], bajo[w])
+  <span class="k">si no, si</span> w <span class="k">esta en</span> la pila:
+    bajo[v] = min(bajo[v], indice[w])
+<span class="k">si</span> bajo[v] == indice[v]:
+  desapilar hasta v: es una SCC</pre>
+      <ul class="puntos">
+        <li>Las SCC salen en orden topológico inverso del DAG.</li>
+        <li>Iterativo, con pila de marcos (nodo, pos): O(V + E) y sin límite de recursión.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/tarjan.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Grafo de 9 nodos: SCC en el orden de Tarjan {f}, {d, e}, {g, h, i}, {a, b, c} y DAG de 4 supernodos.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Centralidad</div>
+  <h2>Centralidad de intermediación</h2>
+  <div class="dos mitad">
+    <div>
+      <p>sigma_st cuenta los caminos mínimos de s a t y sigma_st(v) los que pasan por v. La intermediación suma, por cada par, la fracción que cruza v:</p>
+      <div class="formula">C_B(v) = suma sobre s != v != t de
+         sigma_st(v) / sigma_st</div>
+      <p>Brandes no recorre pares: desde cada fuente s acumula la dependencia hacia atrás, de los nodos lejanos a los cercanos:</p>
+      <div class="formula">dep(v) = suma, para w con v en pred(w), de
+         sigma_v / sigma_w * (1 + dep(w))
+C_B(v) = suma de dep_s(v), s != v</div>
+    </div>
+    <div>
+      <pre class="codigo"><span class="k">para cada</span> fuente s:
+  BFS desde s; la pila guarda el orden
+    <span class="k">al ver</span> v -&gt; w <span class="k">con</span> dist[w] == dist[v] + 1:
+      sigma[w] += sigma[v]; pred[w].append(v)
+  dep = 0 para todo nodo
+  <span class="k">mientras</span> pila:                <span class="c"># de lejos a cerca</span>
+    w = pila.pop()
+    <span class="k">para</span> v <span class="k">en</span> pred[w]:
+      dep[v] += sigma[v] / sigma[w] * (1 + dep[w])
+    <span class="k">si</span> w != s: C_B[w] += dep[w]</pre>
+      <ul class="puntos">
+        <li>Cada fuente cuesta un BFS O(V + E) y una pasada hacia atrás: O(V(V + E)) en total, sin normalizar.</li>
+        <li>Recibe las aristas como pares (origen, destino): las paralelas se colapsan.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Centralidad</div>
+  <h2>Puentes en las rutas a DOMAIN ADMINS</h2>
+  <div class="dos">
+    <div>
+      <p>Subgrafo de rutas: el camino del árbol BFS inverso de cada objeto (no de alto valor) que alcanza el objetivo. 145 nodos y 144 aristas.</p>
+      <p>Es un árbol: sigma = 1 y C_B(v) = descendientes x profundidad. COMP00083: 38 x 2 = 76.</p>
+      <table class="datos">
+        <tr><th>Objeto</th><th>C_B</th></tr>
+        <tr><td>COMP00083</td><td>76</td></tr>
+        <tr><td>IT00161</td><td>54</td></tr>
+        <tr><td>VirgenAurand248</td><td>49</td></tr>
+        <tr><td>RegeniaBowerman57</td><td>49</td></tr>
+        <tr><td>IT00016</td><td>48</td></tr>
+        <tr><td>KeenaLaroe127</td><td>48</td></tr>
+        <tr><td>COMP00028</td><td>45</td></tr>
+      </table>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/brandes.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Caminos mínimos de cuatro orígenes a tres destinos cruzan COMP00083: su intermediación llega a 76.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Vértices de corte</div>
+  <h2>Objetos por los que pasa toda ruta</h2>
+  <div class="dos">
+    <div>
+      <p>v es de corte para un origen o si al quitarlo ningún objetivo alcanzable sigue alcanzable: toda ruta pasa por v.</p>
+      <ul class="puntos">
+        <li>Candidatos: alcanzables desde o que alcanzan un objetivo, sin o ni los objetivos.</li>
+        <li>Un BFS que excluye cada candidato: O(C(V + E)).</li>
+        <li>PiedadFlatley255 a ENTERPRISE DOMAIN CONTROLLERS: 123 candidatos y 2 de corte, DOMAIN ADMINS y FLLABDC.</li>
+        <li>No es el punto de articulación no dirigido: aquí cuenta la dirección.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/cortevertice.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>PiedadFlatley255 hacia ENTERPRISE DOMAIN CONTROLLERS: quitar HR00037 no corta; DOMAIN ADMINS y FLLABDC sí.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Redes de flujo</div>
+  <h2>Red de flujo: capacidad y conservación</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Una red de flujo es un grafo dirigido con capacidad c(u, v) &gt;= 0 en cada arco, una fuente s y un sumidero t. Un flujo f cumple:</p>
+      <div class="formula">capacidad:  0 &lt;= f(u, v) &lt;= c(u, v)
+conservación (v distinto de s y t):
+  flujo que entra a v = flujo que sale
+valor: |f| = sale de s - entra a s</div>
+      <p>El problema de flujo máximo busca el flujo f de mayor valor |f|.</p>
+    </div>
+    <div>
+      <h3>Muchas fuentes y muchos objetivos</h3>
+      <p>Se reduce a una sola fuente y un solo sumidero:</p>
+      <ul class="puntos">
+        <li>Superfuente <code>__S__</code> con un arco de capacidad infinita a cada fuente.</li>
+        <li>Un arco de capacidad infinita de cada objetivo al supersumidero <code>__T__</code>.</li>
+        <li>Un flujo de S a T equivale a flujos simultáneos de las fuentes a los objetivos; esos arcos no pueden cortarse.</li>
+      </ul>
+      <div class="nota">Infinito es <code>INFINITO = 1 &lt;&lt; 30</code> = 1073741824, mayor que cualquier suma de accesos revocables del dataset (son 4039).</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Redes de flujo</div>
+  <h2>El directorio como red de flujo</h2>
+  <div class="dos">
+    <div>
+      <p><code>plan_de_defensa</code> agrupa las aristas por par ordenado (u, v):</p>
+      <ul class="puntos">
+        <li>Par con un acceso estructural (<span class="tipo">CONTAINS</span>, <span class="tipo">GP_LINK</span>): capacidad INFINITO. Son 657 pares.</li>
+        <li>Si no, capacidad = número de accesos revocables del par. Son 3728 pares: 3424 con 1, 302 con 2 (300 son ADMIN_TO + GENERIC_ALL), uno con 5 y uno con 6.</li>
+        <li>Ningún par mezcla ambas clases.</li>
+        <li>Cada arco tiene su inverso; si no es un acceso real, nace con capacidad 0.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/redflujo.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Superfuente S, usuarios, accesos con capacidad 1, 2 o infinita (estructurales), objetivo y supersumidero T.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Flujo máximo</div>
+  <h2>Red residual y caminos de aumento</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Dado un flujo f, la red residual G_f dice cuánto más se puede empujar:</p>
+      <div class="formula">c_f(u, v) = c(u, v) - f(u, v)
+c_f(v, u) = f(u, v)   (deshacer flujo)</div>
+      <ul class="puntos">
+        <li><b>Camino de aumento:</b> camino de s a t en G_f con todas sus capacidades residuales positivas.</li>
+        <li><b>Cuello de botella:</b> el mínimo c_f del camino; es lo que se suma al flujo.</li>
+        <li><b>Edmonds-Karp:</b> Ford-Fulkerson que toma siempre el camino de aumento con menos arcos, hallado por BFS.</li>
+        <li>Sin camino de aumento, el flujo es máximo.</li>
+      </ul>
+    </div>
+    <div>
+      <pre class="codigo"><span class="k">def</span> _edmonds_karp(cap, s, t):
+  flujo = 0
+  <span class="k">repetir</span>:
+    padre = {s: s}; BFS por arcos con cap &gt; 0
+    <span class="c"># el BFS se detiene al descubrir t</span>
+    <span class="k">si</span> t <span class="k">no esta en</span> padre: <span class="k">salir</span>
+    cuello = min de cap[u][v] en el camino
+    <span class="k">para cada</span> arco (u, v) del camino:
+      cap[u][v] -= cuello
+      cap[v][u] += cuello
+    flujo += cuello
+  <span class="k">devolver</span> flujo</pre>
+      <div class="nota">La residual se guarda en sitio en <code>capacidad[u][v]</code> (dict de dicts). Una copia <code>original</code> de las capacidades permite distinguir después los arcos reales de los inversos.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Flujo máximo</div>
+  <h2>Edmonds-Karp paso a paso</h2>
+  <div class="dos">
+    <div>
+      <p>Por qué termina en O(V E^2):</p>
+      <ul class="puntos">
+        <li>Con caminos mínimos, la distancia de s a cada nodo en G_f nunca disminuye.</li>
+        <li>Cada arco es cuello de botella a lo sumo V/2 veces: O(V E) aumentos.</li>
+        <li>Cada aumento es un BFS O(E): total O(V E^2).</li>
+        <li>Con capacidades enteras, el flujo máximo es entero.</li>
+        <li>Como se itera un set, el número de aumentos puede variar entre ejecuciones; el valor del flujo no.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/aumento.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Caminos de aumento hallados por BFS uno a uno: cuello de botella, flujo que sube y arcos que quedan saturados.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Flujo máximo y corte mínimo</div>
+  <h2>Teorema de flujo máximo y corte mínimo</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Enunciado</h3>
+      <p>Un corte (A, B) parte los nodos con s en A y t en B. Su capacidad c(A, B) suma c(u, v) de los arcos que van de A a B.</p>
+      <div class="formula">para todo flujo f y todo corte (A, B):
+  |f| &lt;= c(A, B)
+max |f| = min c(A, B)</div>
+      <p>Son equivalentes: f es máximo; no hay camino de aumento en G_f; |f| = c(A, B) para algún corte.</p>
+    </div>
+    <div>
+      <h3>Por qué el corte del proyecto es mínimo</h3>
+      <ul class="puntos">
+        <li>A = nodos alcanzables desde S en la residual final. T no está en A: si estuviera, habria camino de aumento.</li>
+        <li>Todo arco de A a B está saturado y todo arco de B a A lleva flujo 0. Por eso |f| = c(A, B).</li>
+        <li>Ningún flujo supera ningún corte, así que (A, B) es mínimo.</li>
+        <li>Si |f| &lt; 2^30, ningún arco infinito cruza de A a B: el corte solo tiene accesos revocables.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Flujo máximo y corte mínimo</div>
+  <h2>Del residual al plan de defensa</h2>
+  <div class="dos">
+    <div>
+      <ul class="puntos">
+        <li>Un BFS desde <code>__S__</code> en la residual final da el lado A.</li>
+        <li>Corte: arcos de A hacia fuera con capacidad original finita y positiva; cada par se expande a todos sus accesos revocables.</li>
+        <li><b>Menger:</b> el máximo de rutas disjuntas en aristas es igual al mínimo de aristas que las separan. Aquí, rutas que no comparten accesos revocables.</li>
+        <li>Verificación: BFS desde todas las fuentes que ignora las ternas (origen, destino, tipo) cortadas.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/corteminimo.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Lado de S en la residual, corte en rojo, flujo máximo = corte mínimo, rutas disjuntas (Menger) y verificación.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Resultado</div>
+  <h2>Plan de defensa para DOMAIN ADMINS</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="n">300</div><div class="t">fuentes: usuarios</div></div>
+    <div class="kpi"><div class="n">15</div><div class="t">accesos en el corte mínimo</div></div>
+    <div class="kpi"><div class="n">38 -&gt; 0</div><div class="t">usuarios que llegan, antes y después</div></div>
+    <div class="kpi"><div class="n">12.7 % -&gt; 0 %</div><div class="t">exposición</div></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">947</div><div class="t">fuentes: todos (no alto valor)</div></div>
+    <div class="kpi"><div class="n">15</div><div class="t">el mismo corte</div></div>
+    <div class="kpi"><div class="n">142 -&gt; 0</div><div class="t">objetos que llegan, antes y después</div></div>
+    <div class="kpi"><div class="n">15.0 % -&gt; 0 %</div><div class="t">exposición</div></div>
+  </div>
+  <ul class="puntos">
+    <li>Los 15 accesos son <span class="tipo">User -MEMBER_OF-&gt; DOMAIN ADMINS</span>: el grado de entrada del objetivo es 15.</li>
+    <li><b>Certificado:</b> cada uno de los 15 miembros directos es una fuente con su propia ruta de un salto (flujo &gt;= 15), y quitar esas 15 aristas basta (corte &lt;= 15). Flujo = corte = 15.</li>
+    <li><b>Verificación independiente:</b> un BFS desde todas las fuentes que ignora las aristas cortadas no llega al objetivo (verificado), y <code>riesgo.py</code> mide 0 expuestas.</li>
+  </ul>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Casos borde</div>
+  <h2>Casos borde del plan de defensa</h2>
+  <div class="tres">
+    <div class="tarjeta">
+      <h3>Ruta solo estructural</h3>
+      <p>Si el único camino usa <span class="tipo">CONTAINS</span> o <span class="tipo">GP_LINK</span>, todos sus arcos son infinitos: el flujo vale 2^30 = 1073741824, <code>accesos_a_revocar</code> queda vacío y <code>verificado</code> es False. No existe plan con accesos revocables; lo cubre una prueba de <code>test_algoritmos.py</code>.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Fuentes y objetivos solapados</h3>
+      <p>Si un objeto es fuente y objetivo, S -&gt; x -&gt; T es infinito y no hay corte finito. <code>plan_de_defensa</code> lanza ValueError; el comando <code>defensa</code> quita antes el objetivo de las fuentes.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Aristas paralelas</h3>
+      <p>Se agrupan por par: capacidad = número de accesos revocables. Cortar un par revoca todos sus accesos, y la verificación compara ternas (origen, destino, tipo). BFS se queda con la primera arista; Dijkstra relaja todas y conserva la de menor peso.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Fundamento matemático">
+  <div class="eyebrow">Resumen</div>
+  <h2>Preguntas, algoritmos y costos</h2>
+  <table class="datos">
+    <tr><th>Pregunta</th><th>Tema</th><th>Algoritmo</th><th>Complejidad</th><th>Módulo</th></tr>
+    <tr><td>Qué alcanza X y por qué ruta más corta</td><td>Alcanzabilidad, camino mínimo</td><td>BFS y árbol BFS</td><td>O(V + E)</td><td>recorridos.py</td></tr>
+    <tr><td>Quién llega a un objetivo</td><td>Grafo inverso</td><td>BFS sobre entrada(v)</td><td>O(V + E)</td><td>recorridos.py</td></tr>
+    <tr><td>Ruta de menor esfuerzo</td><td>Grafo ponderado</td><td>Dijkstra con heapq</td><td>O((V + E) log V)</td><td>caminos.py, pesos.py</td></tr>
+    <tr><td>Grupos efectivos</td><td>Cerradura transitiva</td><td>Warshall con bits</td><td>O(n^3) en bits, n = 308</td><td>transitiva.py</td></tr>
+    <tr><td>Núcleos de control mutuo</td><td>SCC y DAG condensado</td><td>Tarjan iterativo</td><td>O(V + E)</td><td>componentes.py</td></tr>
+    <tr><td>Objetos puente</td><td>Intermediación</td><td>Brandes</td><td>O(V(V + E))</td><td>centralidad.py</td></tr>
+    <tr><td>Objetos imprescindibles</td><td>Vértices de corte</td><td>Un BFS por candidato</td><td>O(C(V + E)), C candidatos</td><td>cortes.py</td></tr>
+    <tr><td>Plan de defensa mínimo</td><td>Flujo máximo, corte mínimo, Menger</td><td>Edmonds-Karp</td><td>O(V E^2) en la red de flujo</td><td>cortes.py</td></tr>
+    <tr><td>Exposición antes y después</td><td>Alcanzabilidad inversa</td><td>Un BFS inverso por objetivo</td><td>O(k(V + E)), k objetivos</td><td>riesgo.py</td></tr>
+  </table>
+</section>
+<section class="slide oscura seccion" data-seccion="Arquitectura y código">
+  <div class="numero">4</div>
+  <h2>Arquitectura y código</h2>
+  <ul class="puntos">
+    <li>Del archivo JSON al grafo en memoria, y de ahí a cuatro salidas: CLI, web, visor y reporte.</li>
+    <li>Estructura del repositorio, dependencias entre módulos, modelo de datos y módulos de análisis.</li>
+    <li>La línea de comandos, las consultas del ejemplo, las trazas, el servidor, la API y la página interactiva.</li>
+    <li>Visor offline, reporte, pruebas, cómo ejecutar todo, glosario y guía de estudio.</li>
+  </ul>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Vista general</div>
+  <h2>De los datos a las respuestas</h2>
+  <div class="formula">JSON Lines  -&gt; cargar_json()  -&gt; Grafo: 953 nodos, 4698 aristas
+Grafo       -&gt; recorridos, caminos, componentes, transitiva,
+               centralidad, cortes, riesgo, consultas, trazas
+Resultados  -&gt; cli.py | servidor.py + página | visor.py | reporte.py</div>
+  <div class="tres">
+    <div class="tarjeta">
+      <h3>Un solo modelo</h3>
+      <p>cargar_json lee el archivo una vez por ejecución. Todos los algoritmos consultan el mismo Grafo con sus listas de salida y de entrada.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Algoritmos sin efectos</h3>
+      <p>Los módulos de análisis reciben el grafo y devuelven conjuntos, listas o diccionarios. No imprimen, no escriben archivos y no modifican el grafo.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>Cuatro salidas</h3>
+      <p>cli.py imprime texto, servidor.py entrega JSON a la página, y visor.py y reporte.py devuelven HTML que la CLI escribe en disco.</p>
+    </div>
+  </div>
+  <div class="nota">El punto de entrada <code>main.py</code> solo llama a <code>grafo_ad.cli.main()</code> y devuelve su código de salida al sistema.</div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Repositorio</div>
+  <h2>Estructura del repositorio</h2>
+  <div class="dos mitad">
+    <pre class="codigo"><span class="k">proyecto/</span>
+  README.md           <span class="c">uso, algoritmos, validación</span>
+  DISENO.md           <span class="c">guía visual de la interfaz</span>
+  main.py             <span class="c">punto de entrada</span>
+  grafo_ad/           <span class="c">el paquete (a la derecha)</span>
+  pruebas/            <span class="c">4 archivos, 29 pruebas</span>
+  data/               <span class="c">el dataset en JSON Lines</span>
+  demostracion.ipynb  <span class="c">cuaderno paso a paso</span>
+  diseno/             <span class="c">logo.svg e iconos.svg</span>
+  animaciones/        <span class="c">fuente de las animaciones</span>
+  docs/               <span class="c">la web publicada:</span>
+    presentacion/     <span class="c">esta presentación</span>
+    visor.html        <span class="c">visor offline generado</span></pre>
+    <pre class="codigo"><span class="k">grafo_ad/</span>
+  __init__.py      <span class="c">reexporta el modelo</span>
+  modelo.py        <span class="c">carga del JSON y Grafo</span>
+  pesos.py         <span class="c">peso por tipo de acceso</span>
+  recorridos.py    <span class="c">BFS, DFS, alcance</span>
+  caminos.py       <span class="c">Dijkstra</span>
+  componentes.py   <span class="c">Tarjan y grafo condensado</span>
+  transitiva.py    <span class="c">Warshall con mapas de bits</span>
+  centralidad.py   <span class="c">rutas y Brandes</span>
+  cortes.py        <span class="c">vértices de corte, Edmonds-Karp</span>
+  riesgo.py        <span class="c">exposición antes y después</span>
+  consultas.py     <span class="c">consultas del ejemplo</span>
+  trazas.py        <span class="c">algoritmos instrumentados</span>
+  servidor.py      <span class="c">API web en 127.0.0.1</span>
+  interfaz_web.py  <span class="c">página, iconos y logo</span>
+  visor.py         <span class="c">visor offline</span>
+  reporte.py       <span class="c">reporte HTML</span>
+  cli.py           <span class="c">argparse, 13 subcomandos</span>
+  recursos/        <span class="c">Bebas Neue y su licencia OFL</span></pre>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Importaciones</div>
+  <h2>Dependencias entre módulos</h2>
+  <div class="dos">
+    <div>
+      <p>Cada flecha va del módulo que importa al importado. Las importaciones forman un grafo sin ciclos.</p>
+      <ul class="puntos">
+        <li><b>Base:</b> modelo, pesos e interfaz_web no importan nada del paquete.</li>
+        <li><b>Núcleo:</b> recorridos, componentes y transitiva usan modelo; caminos usa modelo y pesos.</li>
+        <li><b>Sobre recorridos:</b> centralidad, cortes, riesgo, consultas y trazas.</li>
+        <li><b>Salidas:</b> servidor, visor y reporte; cli las reúne y main solo llama a cli.</li>
+      </ul>
+      <div class="nota">servidor se importa dentro de <code>cmd_servir</code>: solo se carga al levantar la web.</div>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/arquitectura.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>Grafo de dependencias entre los módulos de grafo_ad: desde modelo y pesos hasta cli y main.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">modelo.py</div>
+  <h2>El modelo de datos</h2>
+  <div class="dos mitad">
+    <div>
+      <p>El archivo es <b>JSON Lines</b>: un objeto por línea, nodo o relación. Ejemplo inventado con el formato real (propiedades recortadas y cada objeto partido en varias líneas para que quepa):</p>
+      <pre class="codigo">{"type":"node","id":"7","labels":["User"],
+ "properties":{"name":"ANA@EJEMPLO.LOCAL",
+               "objectid":"S-1-5-21-1-1104"}}
+{"type":"node","id":"9","labels":["Group","HighValue"],
+ "properties":{"name":"ADMINS@EJEMPLO.LOCAL",
+               "objectid":"S-1-5-21-1-512"}}
+{"type":"relationship","id":"40","label":"MEMBER_OF",
+ "properties":{"isacl":false},
+ "start":{"id":"7","labels":["User"]},
+ "end":{"id":"9","labels":["Group","HighValue"]}}</pre>
+    </div>
+    <ul class="puntos">
+      <li><b>Nodo</b> (dataclass congelada): id, etiquetas y propiedades. <code>tipo</code> es la primera etiqueta distinta de HighValue y <code>alto_valor</code> dice si tiene esa etiqueta.</li>
+      <li><b>Arista</b>: id, origen, destino, tipo (el label) y propiedades como isacl.</li>
+      <li><b>Grafo</b>: dict de nodos, lista de aristas, listas de salida y de entrada por nodo, e índices por nombre (en minúsculas) y por objectid.</li>
+      <li><b>cargar_json</b>: primero todos los nodos, luego las aristas. Una línea inválida o una arista hacia un nodo inexistente lanza ValueError. Costo O(V + E).</li>
+      <li><b>resolver(clave)</b>: prueba id interno, nombre y objectid, en ese orden. El orden de <code>salida()</code> es el del archivo y fija los desempates.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">grafo_ad</div>
+  <h2>Módulos de análisis (1/2)</h2>
+  <table class="datos">
+    <tr><th>Módulo</th><th>Responsabilidad</th><th>Funciones principales</th><th>Costo</th></tr>
+    <tr><td><code>modelo.py</code></td><td>Cargar el JSON y guardar el grafo dirigido</td><td>cargar_json, Grafo.resolver, salida, entrada</td><td>O(V + E)</td></tr>
+    <tr><td><code>pesos.py</code></td><td>Esfuerzo por tipo de acceso, escala 1 a 4 (HAS_SESSION vale 4)</td><td>peso, PESOS_POR_TIPO</td><td>O(1)</td></tr>
+    <tr><td><code>recorridos.py</code></td><td>Alcance hacia adelante y hacia atrás; caminos en saltos</td><td>bfs_arbol, alcanzables, alcanzan_a, dfs_orden, camino_mas_corto</td><td>O(V + E)</td></tr>
+    <tr><td><code>caminos.py</code></td><td>Camino de menor esfuerzo</td><td>dijkstra (heapq con borrado perezoso), camino_mas_facil</td><td>O((V + E) log V)</td></tr>
+    <tr><td><code>componentes.py</code></td><td>Núcleos de control mutuo y grafo condensado</td><td>componentes_fuertemente_conexas (Tarjan iterativo), componentes_no_triviales, grafo_condensado</td><td>O(V + E)</td></tr>
+    <tr><td><code>transitiva.py</code></td><td>Grupos efectivos por pertenencia anidada</td><td>_cerradura_grupos (Warshall con filas de bits), grupos_efectivos</td><td>n^2 operaciones OR de n bits, n = 308 grupos</td></tr>
+  </table>
+  <div class="nota" style="margin-top: 22px">En el dataset V = 953 nodos y E = 4698 aristas. Las funciones devuelven estructuras de Python (conjuntos, listas, diccionarios) y ninguna modifica el Grafo.</div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">grafo_ad</div>
+  <h2>Módulos de análisis (2/2)</h2>
+  <table class="datos">
+    <tr><th>Módulo</th><th>Responsabilidad</th><th>Funciones principales</th><th>Costo</th></tr>
+    <tr><td><code>centralidad.py</code></td><td>Rutas hacia un objetivo y objetos puente</td><td>subgrafo_rutas_ataque (un BFS inverso), betweenness (Brandes, sin normalizar)</td><td>Brandes: O(V (V + E))</td></tr>
+    <tr><td><code>cortes.py</code></td><td>Cuellos de botella de un origen</td><td>nodos_de_corte: un BFS que excluye a cada candidato</td><td>O(C (V + E))</td></tr>
+    <tr><td><code>cortes.py</code></td><td>Plan de defensa mínimo</td><td>plan_de_defensa: red de flujo, _edmonds_karp, corte y _verificar_corte</td><td>O(V E^2)</td></tr>
+    <tr><td><code>riesgo.py</code></td><td>Exposición antes y después del corte</td><td><code>exposicion</code>, <code>exposicion_tras_corte</code> (BFS inverso por objetivo)</td><td>O(k (V + E))</td></tr>
+    <tr><td><code>consultas.py</code></td><td>Consultas Cypher del ejemplo, en Python</td><td>sesiones_activas, acceso_rdp, alto_valor_alcanzable y otras tres</td><td>un barrido de aristas o un BFS</td></tr>
+    <tr><td><code>trazas.py</code></td><td>Versiones que registran cada paso para la web</td><td>bfs_traza, dijkstra_traza, defensa_traza, layout_radial</td><td>las del algoritmo original</td></tr>
+  </table>
+  <div class="nota" style="margin-top: 22px">C = candidatos (alcanzables desde el origen que a su vez alcanzan un objetivo); k = número de objetivos. En la red de flujo, un par con acceso estructural (CONTAINS, GP_LINK) tiene capacidad 2^30.</div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">cli.py (1/3)</div>
+  <h2>La CLI: subcomandos de análisis</h2>
+  <table class="datos">
+    <tr><th>Subcomando</th><th>Argumentos (valor por omisión)</th><th>Qué imprime</th></tr>
+    <tr><td><code>resumen</code></td><td>ninguno</td><td>Vértices, aristas y objetivos de alto valor; conteo por tipo de objeto y de acceso</td></tr>
+    <tr><td><code>consultas</code></td><td>--limite (15)</td><td>Las consultas del ejemplo, hasta N filas cada una, y el alto valor que alcanza PiedadFlatley255</td></tr>
+    <tr><td><code>alcance</code></td><td>--usuario (obligatorio)</td><td>Cuántos objetos alcanza y cuáles son de alto valor</td></tr>
+    <tr><td><code>quien-llega</code></td><td>--objetivo (objectid de DOMAIN ADMINS)</td><td>Cuántos objetos llegan al objetivo, agrupados por tipo</td></tr>
+    <tr><td><code>camino</code></td><td>--origen y --destino (obligatorios)</td><td>Camino más corto (BFS) y camino de menor esfuerzo (Dijkstra) con su peso</td></tr>
+    <tr><td><code>scc</code></td><td>--limite (5)</td><td>Total de SCC, cuántas tienen más de un objeto, aristas del DAG y hasta 10 miembros de cada una</td></tr>
+    <tr><td><code>permisos</code></td><td>--usuario (obligatorio)</td><td>Grupos efectivos, cada uno marcado como directo o heredado</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">cli.py (2/3)</div>
+  <h2>La CLI: defensa, archivos y web</h2>
+  <table class="datos">
+    <tr><th>Subcomando</th><th>Argumentos (valor por omisión)</th><th>Qué hace</th></tr>
+    <tr><td><code>centralidad</code></td><td>--objetivo (solo objectid), --limite (15)</td><td>Aristas del subgrafo de rutas y objetos con mayor intermediación</td></tr>
+    <tr><td><code>cortes</code></td><td>--origen (obligatorio), --objetivo</td><td>Objetos cuyo retiro corta todo acceso del origen al objetivo</td></tr>
+    <tr><td><code>defensa</code></td><td>--objetivo, --fuentes usuarios o todos (usuarios)</td><td>Tamaño del corte, exposición antes y después, verificación y accesos a revocar</td></tr>
+    <tr><td><code>reporte</code></td><td>--usuario, --objetivo (solo objectid), --salida (reporte.html)</td><td>Escribe el reporte HTML</td></tr>
+    <tr><td><code>visor</code></td><td>--salida (visor.html)</td><td>Escribe el visor offline</td></tr>
+    <tr><td><code>servir</code></td><td>--puerto (8000), --sin-abrir</td><td>Arranca el servidor y abre el navegador</td></tr>
+  </table>
+  <div class="nota" style="margin-top: 22px"><b>Cómo está armada:</b> <code>construir_parser()</code> crea un subparser por comando y le asocia su función con <code>set_defaults(func=cmd_...)</code>. <code>main()</code> ejecuta <code>args.func(args)</code> y convierte KeyError, ValueError y FileNotFoundError en "Error: ..." con código de salida 1.</div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">cli.py (3/3)</div>
+  <h2>La CLI en uso</h2>
+  <pre class="codigo"><span class="c"># desde la carpeta del proyecto</span>
+python main.py resumen
+python main.py alcance --usuario "PiedadFlatley255@TestCompany.Local"      <span class="c"># 928 objetos, 4 de alto valor</span>
+python main.py camino --origen "CaronOstrye16@TestCompany.Local" --destino "DOMAIN ADMINS@TestCompany.Local"
+<span class="c"># BFS: 3 saltos; Dijkstra: peso 8 (EXECUTE_DCOM 3 + HAS_SESSION 4 + MEMBER_OF 1)</span>
+python main.py defensa --fuentes todos           <span class="c"># corte 15; exposición 142/947 -&gt; 0/947</span>
+python main.py centralidad --objetivo S-1-5-21-883232822-274137685-4173207997-512
+python main.py --datos otro.json resumen         <span class="c"># --datos va antes del subcomando</span></pre>
+  <div class="tres">
+    <div class="nota ambar"><b>--datos es global:</b> va antes del subcomando. Escrito después, argparse lo rechaza como argumento no reconocido.</div>
+    <div class="nota"><b>Nombres:</b> resolver acepta id interno, nombre (sin distinguir mayúsculas) u objectid. <b>centralidad</b> y <b>reporte</b> solo aceptan objectid en --objetivo.</div>
+    <div class="nota alerta"><b>Errores:</b> un objeto que no existe produce un aviso en stderr y código de salida 1.</div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">consultas.py</div>
+  <h2>Consultas reconstruidas del ejemplo</h2>
+  <table class="datos">
+    <tr><th>Función</th><th>Qué reconstruye</th><th>Resultado</th></tr>
+    <tr><td><code>sesiones_activas</code></td><td>Pares (equipo, usuario) de cada arista HAS_SESSION</td><td>264</td></tr>
+    <tr><td><code>acceso_directo_a_alto_valor</code></td><td>Accesos que entran a un objeto HighValue desde un User o un Group</td><td>30</td></tr>
+    <tr><td><code>equipos_con_sesiones_multiples</code></td><td>HAS_SESSION agrupado por equipo; equipos con más de un usuario</td><td>66</td></tr>
+    <tr><td><code>acceso_rdp</code></td><td>CAN_RDP directo de un usuario, o heredado de un grupo al que llega con 1 a 3 MEMBER_OF</td><td>118: 30 directos y 88 heredados</td></tr>
+    <tr><td><code>alto_valor_alcanzable</code></td><td>BFS desde el usuario y saltos hasta cada objeto de alto valor</td><td>4 para PiedadFlatley255 (a 1, 2, 3 y 3 saltos)</td></tr>
+    <tr><td><code>una_ruta_de_acceso</code></td><td>BFS y reconstruir_camino hasta un objectid, en pasos "A -[TIPO]-&gt; B"</td><td>Hasta DOMAIN ADMINS: 1 salto por MEMBER_OF</td></tr>
+  </table>
+  <div class="nota" style="margin-top: 22px">Neo4j responde estas preguntas con Cypher. Aquí cada una es un barrido de aristas o un BFS explícito sobre las listas de adyacencia, sin motor de base de datos. Las usan <code>consultas</code> de la CLI y reporte.py.</div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">trazas.py</div>
+  <h2>Algoritmos instrumentados</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Los módulos de análisis solo devuelven el resultado. <b>trazas.py</b> repite BFS, Dijkstra y Edmonds-Karp anotando cada paso para que la página lo reproduzca.</p>
+      <ul class="puntos">
+        <li><b>idx:</b> cada id de nodo pasa a un entero estable (orden de carga); el cliente solo maneja índices.</li>
+        <li><b>subgrafo_objetivo:</b> quienes alcanzan el objetivo, más el objetivo: 148 nodos y 601 aristas para DOMAIN ADMINS. Todo camino hacia el objetivo vive ahí.</li>
+        <li><b>layout_radial:</b> un BFS inverso da la profundidad; cada subárbol recibe un ángulo proporcional a sus hojas; el objetivo queda en (0, 0).</li>
+        <li>BFS se detiene al descubrir el objetivo; Dijkstra, al cerrarlo.</li>
+      </ul>
+    </div>
+    <div>
+      <pre class="codigo"><span class="c"># Real: CaronOstrye16 -&gt; DOMAIN ADMINS</span>
+<span class="c"># BFS: un paso por nodo expandido</span>
+"pasos": [{"nodo": 329,
+  "descubre": [[329, 57, "EXECUTE_DCOM"]]}, ...]
+"camino": [[329, 57, "EXECUTE_DCOM"],
+  [57, 478, "HAS_SESSION"], [478, 0, "MEMBER_OF"]]
+"encontrado": true, "saltos": 3
+<span class="c"># Dijkstra: un paso por nodo cerrado</span>
+"pasos": [{"nodo": 329, "dist": 0,
+  "relaja": [[329, 57, "EXECUTE_DCOM", 3]]}, ...]
+"peso": 8, "saltos": 3
+<span class="c"># Defensa: caminos de aumento y corte</span>
+"caminos": [...], "nCaminos": 15, "flujo": 15,
+"corte": [[u, v, "MEMBER_OF"], ...],
+"antes": 147, "despues": 0, "seguros": [...]</pre>
+      <div class="nota">flujo = accesos del corte; antes = objetos del subgrafo que alcanzan el objetivo, no solo fuentes.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">servidor.py</div>
+  <h2>El servidor web</h2>
+  <div class="dos">
+    <div>
+      <p><code>python main.py servir</code> carga el grafo una vez y arranca un <b>ThreadingHTTPServer</b> de la biblioteca estándar.</p>
+      <ul class="puntos">
+        <li>Escucha solo en <b>127.0.0.1</b>: nadie fuera del equipo puede conectarse.</li>
+        <li><code>/</code> entrega la página; cada <code>/api/...</code> corre el algoritmo en Python y responde JSON.</li>
+        <li>Solo lee el grafo: no guarda nada entre peticiones ni escribe datos.</li>
+        <li>Sin Flask ni dependencias: http.server, json, urllib.parse y webbrowser.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/web.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>El navegador pide a servidor.py (127.0.0.1) una traza; trazas.py la calcula sobre el grafo en memoria y la página la reproduce.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">servidor.py</div>
+  <h2>La API y su validación</h2>
+  <table class="datos">
+    <tr><th>Ruta (GET)</th><th>Parámetros</th><th>Responde</th></tr>
+    <tr><td><code>/</code> o <code>/index.html</code></td><td>ninguno</td><td>La página completa (constante <code>PAGINA</code> de <code>interfaz_web.py</code>)</td></tr>
+    <tr><td><code>/api/objetivos</code></td><td>ninguno</td><td>Los 6 objetivos {i, nombre} y porOmision (DOMAIN ADMINS)</td></tr>
+    <tr><td><code>/api/grafo</code></td><td>objetivo</td><td>Nodos {i, nombre, tipo, hv, x, y}, aristas [s, d, tipo], usuarios y totalNodos</td></tr>
+    <tr><td><code>/api/bfs</code></td><td>objetivo, origen</td><td>Traza de BFS</td></tr>
+    <tr><td><code>/api/dijkstra</code></td><td>objetivo, origen, pesos (JSON opcional)</td><td>Traza de Dijkstra con esos pesos o los de pesos.py</td></tr>
+    <tr><td><code>/api/defensa</code></td><td>objetivo, fuentes (usuarios o todos)</td><td>Traza de Edmonds-Karp y corte mínimo</td></tr>
+    <tr><td>otra ruta</td><td>-</td><td>404 con {"error": "ruta no encontrada"}</td></tr>
+  </table>
+  <div class="nota alerta" style="margin-top: 22px"><b>Validación:</b> objetivo y origen deben ser enteros entre 0 y 952; el origen debe alcanzar el objetivo; pesos debe ser un objeto JSON de números no negativos (se truncan a entero); un valor de fuentes desconocido se toma como usuarios. Un fallo responde 400 con {"error": "..."}.</div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Interfaz web (1/2)</div>
+  <h2>La página: Canvas y fuerzas</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Dibujo</h3>
+      <ul class="puntos">
+        <li><b>interfaz_web.py</b> guarda la página completa como texto: HTML, CSS, JavaScript, iconos y logo.</li>
+        <li>Canvas 2D con una simulación de fuerzas propia, sin bibliotecas: <b>resortes</b> en cada arista (reposo 46 px), <b>repulsión</b> entre todos los pares (O(n^2), suficiente para 148 nodos) y <b>gravedad</b> hacia el centro.</li>
+        <li>El objetivo queda fijo en el centro y la energía de la simulación decae hasta que el grafo se asienta.</li>
+        <li><b>Vista radial:</b> cada objeto en el anillo de su distancia en saltos, con 70 px o más entre anillos y 34 px de arco por objeto; el ángulo parte de layout_radial.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Interacción</h3>
+      <ul class="puntos">
+        <li><b>Hover</b> sobre un nodo: resalta vecinos y accesos; el resto baja al 12 % de opacidad. Sobre una arista: su tipo y lo que permite.</li>
+        <li><b>Clic:</b> fija el foco y abre la tarjeta (tipo, distancia, qué controla, quién lo controla); en BFS y Dijkstra lo elige como origen.</li>
+        <li><b>Leyenda</b> con pestañas Objetos y Accesos; <b>buscador</b> por nombre.</li>
+        <li><b>Atajos:</b> / buscar, Espacio, flechas, E ejecutar, F ajustar, R disposición, P panel, Esc; la lista completa con ?.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Interfaz web (2/2)</div>
+  <h2>Reproducción paso a paso y diseño</h2>
+  <div class="dos mitad">
+    <div>
+      <p>Un cuadro por paso (BFS, Dijkstra) o por camino de aumento (defensa), más el cuadro final. Se puede pausar, retroceder, avanzar y elegir de 1x a 8x.</p>
+      <table class="datos">
+        <tr><th>Se ve</th><th>Significa</th></tr>
+        <tr><td>Anillo naranja que pulsa</td><td>Nodo que se expande o se cierra</td></tr>
+        <tr><td>Círculo hueco</td><td>Frontera: descubierto, sin expandir</td></tr>
+        <tr><td>Insignia azul marino</td><td>Saltos o peso acumulado</td></tr>
+        <tr><td>Trazo naranja grueso</td><td>Camino hallado, tramo a tramo</td></tr>
+        <tr><td>Trazo morado</td><td>Camino de aumento (claro: anteriores)</td></tr>
+        <tr><td>Rojo punteado</td><td>Acceso del corte mínimo</td></tr>
+        <tr><td>Ola verde</td><td>Objetos aislados, 140 ms por salto</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Diseño (DISENO.md)</h3>
+      <ul class="puntos">
+        <li><b>Plano:</b> colores sólidos, sin degradados ni sombras.</li>
+        <li><b>El color significa:</b> rojo objetivo y corte, naranja alto valor y camino, azul usuarios, turquesa equipos, morado grupos, gris GPO, OU y dominio, verde aislado.</li>
+        <li><b>Tipografía:</b> Bebas Neue en títulos y cifras (incrustada en base64, licencia OFL) y Bahnschrift en el texto.</li>
+        <li><b>Iconos propios:</b> pequeños grafos de nodos y aristas en una retícula de 24 x 24, trazo 1.9 y color heredado.</li>
+        <li>Con movimiento reducido se omiten partículas, pulsos y transiciones.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">visor.py</div>
+  <h2>El visor offline</h2>
+  <div class="dos">
+    <div>
+      <p><code>python main.py visor</code> escribe un solo HTML que se abre con doble clic, sin Python ni red.</p>
+      <ul class="puntos">
+        <li><b>Misma página:</b> <code>pagina()</code> de <code>interfaz_web.py</code> con un script extra antes del principal.</li>
+        <li>Ese script define <code>window.backendLocal</code>, que responde las rutas /api/...; <code>api()</code> lo usa si existe y si no hace fetch.</li>
+        <li>Un <b>rango</b> por nodo desempata Dijkstra igual que heapq.</li>
+        <li><b>1789 consultas</b> comparadas con Python: sin diferencias.</li>
+      </ul>
+    </div>
+    <figure class="visual">
+      <video src="animaciones/visor.mp4" muted playsinline preload="metadata"></video>
+      <button class="repetir" aria-label="Repetir animación"><svg viewBox="0 0 24 24"><use href="#ic-inicio"/></svg></button>
+      <figcaption>visor.py arma un HTML con los datos, la misma página y un backend en JavaScript; los resultados coinciden con Python.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Entregables</div>
+  <h2>El reporte y las cuatro salidas</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>reporte.py</h3>
+      <p><code>python main.py reporte</code> escribe <b>reporte.html</b>: CSS en línea, sin JavaScript ni archivos externos.</p>
+      <ul class="puntos">
+        <li>Resumen: 953 objetos, 4698 accesos, 6 objetivos y 16 tipos de acceso, con tablas por tipo.</li>
+        <li>Alcance del usuario de ejemplo y una ruta de acceso dibujada en SVG.</li>
+        <li>Los 12 objetos puente con mayor intermediación.</li>
+        <li>Plan de defensa con fuentes = usuarios: corte, exposición antes y después, verificación y accesos.</li>
+        <li>Todo texto del grafo pasa por html.escape.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Cuatro formas de ver los resultados</h3>
+      <ul class="puntos">
+        <li><b>Línea de comandos:</b> texto en la consola, una pregunta por subcomando.</li>
+        <li><b>reporte.html:</b> un resumen estático para compartir o imprimir.</li>
+        <li><b>servir:</b> la aplicación web con la API y la reproducción paso a paso.</li>
+        <li><b>visor:</b> la misma aplicación en un solo HTML, sin servidor.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">pruebas/</div>
+  <h2>Pruebas automatizadas</h2>
+  <table class="datos">
+    <tr><th>Archivo</th><th>Pruebas</th><th>Qué verifica</th></tr>
+    <tr><td><code>test_algoritmos.py</code></td><td>12</td><td>Grafos sintéticos hechos a mano: recorridos (3), Dijkstra prefiere dos MEMBER_OF a un HAS_SESSION (1), SCC y DAG (2), Warshall (1), centralidad b = 1.0 en a -&gt; b -&gt; c (1), corte mínimo y nodos de corte (4)</td></tr>
+    <tr><td><code>test_datos.py</code></td><td>4</td><td>Dataset real: 953, 4698 y 6 alto valor; PiedadFlatley255 alcanza 4 de alto valor; hay ruta a ENTERPRISE DOMAIN CONTROLLERS; defensa de DOMAIN ADMINS verificada con exposición 0 (se omite si falta data/)</td></tr>
+    <tr><td><code>test_trazas.py</code></td><td>6</td><td>Trazas de BFS y Dijkstra (3), flujo 1 en un cuello de botella y lo estructural fuera del corte (2), layout radial con el objetivo en (0, 0) (1)</td></tr>
+    <tr><td><code>test_visor.py</code></td><td>7</td><td>Página sin backend local, Bebas Neue en base64, cada icono usado definido, orden de los scripts, backend y datos incrustados, escape de "&lt;/script&gt;", datos compactos fieles</td></tr>
+  </table>
+  <pre class="codigo" style="margin-top: 22px">python -m unittest discover -s pruebas       <span class="c"># 29 pruebas, OK</span>
+python -m unittest discover -s pruebas -v    <span class="c"># con el nombre de cada prueba</span>
+python -m unittest pruebas.test_algoritmos   <span class="c"># un solo archivo</span></pre>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Puesta en marcha</div>
+  <h2>Cómo ejecutar todo</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Requisitos</h3>
+      <ul class="puntos">
+        <li><b>Python 3.10 o superior.</b> Solo biblioteca estándar: no hay nada que instalar.</li>
+        <li>El JSON por omisión se busca junto al paquete, en data/; los archivos de --salida se escriben en la carpeta actual.</li>
+        <li>Las pruebas se corren desde la carpeta del proyecto.</li>
+        <li>Para la web y el visor basta un navegador moderno.</li>
+        <li>Solo el cuaderno necesita Jupyter y matplotlib; el paquete no los usa.</li>
+      </ul>
+      <div class="nota ok">Todo comando acepta <code>--help</code>, por ejemplo <code>python main.py defensa --help</code>.</div>
+    </div>
+    <pre class="codigo"><span class="c"># análisis en texto</span>
+python main.py resumen
+python main.py consultas
+python main.py defensa
+<span class="c"># aplicación web en http://127.0.0.1:8000/</span>
+python main.py servir
+python main.py servir --puerto 8080 --sin-abrir
+<span class="c"># archivos HTML</span>
+python main.py visor --salida visor.html
+python main.py reporte --salida reporte.html
+<span class="c"># pruebas</span>
+python -m unittest discover -s pruebas
+<span class="c"># cuaderno</span>
+jupyter notebook demostracion.ipynb</pre>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Glosario (1/2)</div>
+  <h2>Glosario: ciberseguridad</h2>
+  <div class="dos mitad">
+    <table class="datos">
+      <tr><th>Término</th><th>Significado</th></tr>
+      <tr><td>Active Directory</td><td>Directorio de Windows con usuarios, equipos, grupos y políticas de una organización</td></tr>
+      <tr><td>Dominio</td><td>Unidad de administración del directorio; aquí TestCompany.Local</td></tr>
+      <tr><td>Controlador de dominio</td><td>Servidor que autentica a todos y guarda la base del directorio</td></tr>
+      <tr><td>Grupo</td><td>Conjunto de principales que heredan sus permisos (MEMBER_OF), también anidados</td></tr>
+      <tr><td>OU y GPO</td><td>Carpeta que contiene objetos (CONTAINS) y política vinculada a ella (GP_LINK)</td></tr>
+      <tr><td>Sesión</td><td>Credencial que un usuario deja en memoria de un equipo (HAS_SESSION)</td></tr>
+      <tr><td>SID u objectid</td><td>Identificador de seguridad único; el de DOMAIN ADMINS termina en -512</td></tr>
+    </table>
+    <table class="datos">
+      <tr><th>Término</th><th>Significado</th></tr>
+      <tr><td>ACL y DACL</td><td>Lista de permisos de un objeto; de ella salen GENERIC_ALL, WRITE_DACL, OWNS y otros</td></tr>
+      <tr><td>Administrador local</td><td>Control total sobre un equipo (ADMIN_TO)</td></tr>
+      <tr><td>RDP y DCOM</td><td>Sesión remota y ejecución remota en un equipo (CAN_RDP, EXECUTE_DCOM)</td></tr>
+      <tr><td>Delegación</td><td>Permiso para actuar ante un equipo en nombre de otros (ALLOWED_TO_DELEGATE)</td></tr>
+      <tr><td>Replicación</td><td>Derecho a copiar el directorio con sus secretos (GET_CHANGES, GET_CHANGES_ALL, DC_SYNC)</td></tr>
+      <tr><td>Alto valor</td><td>Objeto con la etiqueta HighValue; hay 6 en el dataset</td></tr>
+      <tr><td>BloodHound y Neo4j</td><td>BloodHound modela el directorio como grafo; Neo4j es la base de datos de grafos del ejemplo</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Glosario (2/2)</div>
+  <h2>Glosario: matemáticas y algoritmos</h2>
+  <div class="dos mitad">
+    <table class="datos">
+      <tr><th>Término</th><th>Significado</th></tr>
+      <tr><td>Grafo dirigido</td><td>G = (V, E) con aristas con sentido; A -&gt; B: quien controla A puede controlar B</td></tr>
+      <tr><td>Listas de adyacencia</td><td>Aristas de salida y de entrada de cada nodo; recorrer todo cuesta O(V + E)</td></tr>
+      <tr><td>Grafo inverso</td><td>Las mismas aristas con el sentido cambiado; responde quién llega</td></tr>
+      <tr><td>BFS y DFS</td><td>Recorrido por niveles con cola (menos saltos) y en profundidad con pila</td></tr>
+      <tr><td>Dijkstra</td><td>Caminos de peso mínimo con pesos no negativos y un montículo</td></tr>
+      <tr><td>SCC y DAG</td><td>Nodos que se alcanzan entre sí (Tarjan); al colapsarlas queda un grafo sin ciclos</td></tr>
+      <tr><td>Cerradura transitiva</td><td>R+ agrega cada par unido por una cadena; Warshall la calcula</td></tr>
+    </table>
+    <table class="datos">
+      <tr><th>Término</th><th>Significado</th></tr>
+      <tr><td>Intermediación</td><td>Cuántos caminos mínimos entre otros pares pasan por un nodo (Brandes)</td></tr>
+      <tr><td>Vértice de corte</td><td>Nodo que está en toda ruta del origen al objetivo</td></tr>
+      <tr><td>Red de flujo</td><td>Capacidades, superfuente S y supersumidero T; la red residual guarda lo que aún cabe</td></tr>
+      <tr><td>Camino de aumento</td><td>Ruta de S a T con capacidad residual; su cuello de botella sube el flujo</td></tr>
+      <tr><td>Flujo máx = corte mín</td><td>El mayor flujo de S a T iguala la menor capacidad que los separa</td></tr>
+      <tr><td>Menger</td><td>Máximo de rutas disjuntas en aristas = mínimo de aristas que las separan</td></tr>
+      <tr><td>Edmonds-Karp</td><td>Ford-Fulkerson con cada camino de aumento hallado por BFS; O(V E^2)</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Arquitectura y código">
+  <div class="eyebrow">Guía</div>
+  <h2>Cómo estudiar este proyecto</h2>
+  <div class="dos mitad">
+    <div>
+      <h3>Orden de lectura</h3>
+      <ul class="puntos">
+        <li><b>1.</b> README.md: la idea y los comandos.</li>
+        <li><b>2.</b> modelo.py y pesos.py: datos y pesos.</li>
+        <li><b>3.</b> recorridos.py y caminos.py.</li>
+        <li><b>4.</b> componentes.py y transitiva.py.</li>
+        <li><b>5.</b> centralidad.py, cortes.py y riesgo.py.</li>
+        <li><b>6.</b> consultas.py y cli.py: cómo se usa todo.</li>
+        <li><b>7.</b> trazas.py, servidor.py y visor.py.</li>
+        <li><b>8.</b> Cada módulo junto a su prueba en pruebas/.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Preguntas de repaso</h3>
+      <ul class="puntos">
+        <li>¿Por qué HAS_SESSION va del equipo al usuario?</li>
+        <li>¿Por qué cargar_json lee todos los nodos antes que las aristas?</li>
+        <li>¿Cómo responde quien-llega con un solo BFS?</li>
+        <li>¿Por qué dos accesos revocables sobre el mismo par dan capacidad 2?</li>
+        <li>¿Qué devuelve plan_de_defensa si la única ruta es CONTAINS?</li>
+        <li>¿Cómo logra el visor los mismos desempates que heapq?</li>
+        <li>¿Por qué el servidor escucha solo en 127.0.0.1?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<section class="slide oscura seccion" data-seccion="Cierre">
+  <div class="numero">5</div>
+  <h2>Cierre</h2>
+  <ul class="puntos">
+    <li>El proyecto en una sola idea.</li>
+    <li>Lo que deberías poder explicar.</li>
+    <li>Fuentes y créditos.</li>
+  </ul>
+</section>
+
+<section class="slide" data-seccion="Cierre">
+  <div class="eyebrow">El proyecto en una diapositiva</div>
+  <h2>De los datos a una defensa demostrada</h2>
+  <table class="datos">
+    <tr><th>Paso</th><th>Qué se hace</th><th>Herramienta matemática</th></tr>
+    <tr><td>1. Modelar</td><td>Cada objeto es un vértice y cada acceso A -&gt; B una arista: quien controla A puede controlar B.</td><td>Grafo dirigido con aristas paralelas</td></tr>
+    <tr><td>2. Explorar</td><td>Qué alcanza un usuario y quién llega a un objetivo.</td><td>BFS directo e inverso</td></tr>
+    <tr><td>3. Medir esfuerzo</td><td>Ruta más corta y ruta de menor esfuerzo.</td><td>BFS y Dijkstra</td></tr>
+    <tr><td>4. Entender la estructura</td><td>Permisos efectivos, núcleos de control mutuo y objetos puente.</td><td>Warshall, Tarjan, Brandes</td></tr>
+    <tr><td>5. Defender</td><td>El mínimo de accesos que aísla el objetivo.</td><td>Flujo máximo, corte mínimo, Menger</td></tr>
+    <tr><td>6. Verificar</td><td>Ningún usuario llega tras revocar el corte.</td><td>Un BFS independiente</td></tr>
+  </table>
+</section>
+
+<section class="slide" data-seccion="Cierre">
+  <div class="eyebrow">Para llevar</div>
+  <h2>Lo que deberías poder explicar</h2>
+  <div class="dos mitad">
+    <ul class="puntos">
+      <li>Por qué una sesión abierta, un grupo anidado o un permiso sobre un objeto son aristas del mismo grafo.</li>
+      <li>Cómo un atacante encadena accesos y por qué piensa en rutas, no en permisos sueltos.</li>
+      <li>Por qué el BFS inverso responde quién llega a un objetivo en una sola pasada.</li>
+      <li>Por qué Dijkstra puede preferir una ruta más larga pero de menor esfuerzo.</li>
+    </ul>
+    <ul class="puntos">
+      <li>Cómo se convierte el directorio en una red de flujo y qué significa la capacidad infinita.</li>
+      <li>Por qué el corte que entrega Edmonds-Karp es mínimo (flujo máximo = corte mínimo).</li>
+      <li>Qué garantiza el teorema de Menger sobre las rutas disjuntas.</li>
+      <li>Cómo están separados el modelo, los algoritmos, la línea de comandos y la web.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" data-seccion="Cierre">
+  <div class="eyebrow">Fuentes y créditos</div>
+  <h2>De dónde sale cada cosa</h2>
+  <ul class="puntos">
+    <li><b>Datos:</b> entorno ficticio de demostración del ejemplo de cybersecurity de Neo4j (neo4j-graph-examples/cybersecurity), basado en el proyecto BloodHound. El proyecto no usa Neo4j: carga el JSON con Python y reimplementa cada algoritmo.</li>
+    <li><b>Código:</b> Python 3.10, solo biblioteca estándar. La aplicación web y el visor usan HTML, CSS y JavaScript sin bibliotecas.</li>
+    <li><b>Animaciones:</b> composiciones HTML con GSAP renderizadas a video con HyperFrames; su fuente está en la carpeta animaciones del repositorio.</li>
+    <li><b>Tipografía:</b> Bebas Neue (Dharma Type, SIL Open Font License 1.1) para títulos y Bahnschrift para el texto.</li>
+  </ul>
+  <div class="nota">Uso académico y defensivo: el objetivo es cuantificar y reducir la exposición de un entorno, no atacarlo.</div>
+</section>
+  <div id="pie"><span id="pie-seccion"></span><span id="pie-num"></span></div>
+</div>
+<div id="barra"></div>
+<div id="controles">
+  <button id="btn-indice" title="Índice (I)" aria-label="Índice"><svg viewBox="0 0 24 24"><use href="#ic-panel"/></svg></button>
+  <button id="btn-ant" title="Anterior (flecha izquierda)" aria-label="Anterior"><svg viewBox="0 0 24 24" class="chev-izq"><use href="#ic-chevron"/></svg></button>
+  <button id="btn-sig" title="Siguiente (flecha derecha o espacio)" aria-label="Siguiente"><svg viewBox="0 0 24 24" class="chev-der"><use href="#ic-chevron"/></svg></button>
+</div>
+<nav id="indice" aria-label="Índice de diapositivas"></nav>
+<script>
+(function () {
+  "use strict";
+  const escenario = document.getElementById("escenario");
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  let actual = 0;
+
+  function escalar() {
+    const k = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    escenario.style.transform = "translate(-50%, -50%) scale(" + k + ")";
+  }
+
+  // Las animaciones de la diapositiva activa se reproducen desde el inicio;
+  // las demas se pausan para no gastar recursos.
+  function mostrar(i) {
+    actual = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, j) => {
+      s.classList.toggle("activa", j === actual);
+      s.querySelectorAll("video").forEach(v => {
+        if (j === actual) { v.currentTime = 0; const p = v.play(); if (p) p.catch(() => {}); }
+        else v.pause();
+      });
+    });
+    const s = slides[actual];
+    document.getElementById("pie-seccion").textContent = s.dataset.seccion || "";
+    document.getElementById("pie-num").textContent = (actual + 1) + " / " + slides.length;
+    document.getElementById("pie").style.color = s.classList.contains("oscura") ? "#8094ae" : "";
+    document.getElementById("barra").style.width = ((actual + 1) / slides.length * 100) + "%";
+    if (location.hash !== "#" + (actual + 1)) history.replaceState(null, "", "#" + (actual + 1));
+  }
+
+  function construirIndice() {
+    const nav = document.getElementById("indice");
+    nav.innerHTML = "<h2>Índice</h2>";
+    let grupo = null;
+    slides.forEach((s, i) => {
+      if (s.dataset.seccion !== grupo) {
+        grupo = s.dataset.seccion;
+        const g = document.createElement("div"); g.className = "grupo"; g.textContent = grupo; nav.appendChild(g);
+      }
+      const titulo = s.querySelector("h1, h2");
+      const a = document.createElement("a");
+      a.href = "#" + (i + 1);
+      a.textContent = (i + 1) + ". " + (titulo ? titulo.textContent.replace(/\s+/g, " ").trim() : "Diapositiva");
+      a.addEventListener("click", e => { e.preventDefault(); nav.classList.remove("abierto"); mostrar(i); });
+      nav.appendChild(a);
+    });
+  }
+
+  document.querySelectorAll(".repetir").forEach(b => b.addEventListener("click", () => {
+    const v = b.parentElement.querySelector("video");
+    v.currentTime = 0; const p = v.play(); if (p) p.catch(() => {});
+  }));
+  document.getElementById("btn-sig").addEventListener("click", () => mostrar(actual + 1));
+  document.getElementById("btn-ant").addEventListener("click", () => mostrar(actual - 1));
+  document.getElementById("btn-indice").addEventListener("click", () => document.getElementById("indice").classList.toggle("abierto"));
+  document.addEventListener("keydown", e => {
+    const indice = document.getElementById("indice");
+    if (e.key === "Escape") { indice.classList.remove("abierto"); return; }
+    if (e.key === "i" || e.key === "I") { indice.classList.toggle("abierto"); return; }
+    if (indice.classList.contains("abierto")) return;
+    if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); mostrar(actual + 1); }
+    else if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); mostrar(actual - 1); }
+    else if (e.key === "Home") mostrar(0);
+    else if (e.key === "End") mostrar(slides.length - 1);
+  });
+  window.addEventListener("resize", escalar);
+  window.addEventListener("hashchange", () => { const n = parseInt(location.hash.slice(1), 10); if (n) mostrar(n - 1); });
+  escalar();
+  construirIndice();
+  mostrar((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>

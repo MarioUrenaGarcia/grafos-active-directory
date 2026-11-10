@@ -1,0 +1,74 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #df-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="defensor" data-width="1600" data-height="1000">
+  <svg id="df-lienzo" class="clip" data-start="0" data-duration="13" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // El defensor sobre el mismo tipo de grafo: mide quien llega al objetivo,
+  // calcula el corte minimo, revoca esos accesos y verifica el resultado.
+  // Las cifras son las del proyecto para DOMAIN ADMINS: 38 de 300 usuarios.
+  const svg = document.getElementById("df-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  const usuarios = [150, 270, 390, 510, 630, 750].map((y, i) => [`df-u${i}`, 140, y, { tipo: "User", r: 20 }]);
+  d.desde(usuarios.concat([
+    ["df-m1", 520, 270, { tipo: "Computer", r: 20 }], ["df-m2", 520, 450, { tipo: "Group", r: 20 }],
+    ["df-m3", 520, 630, { tipo: "Computer", r: 20 }],
+    ["df-b1", 900, 300, { tipo: "User", r: 22 }], ["df-b2", 900, 450, { tipo: "User", r: 22 }],
+    ["df-b3", 900, 600, { tipo: "User", r: 22 }],
+    ["df-da", 1320, 450, { tipo: "objetivo", r: 44, etiqueta: "DOMAIN ADMINS" }],
+  ]), [
+    ["df-a0", "df-u0", "df-m1", {}], ["df-a1", "df-u1", "df-m1", {}], ["df-a2", "df-u2", "df-m2", {}],
+    ["df-a3", "df-u3", "df-m2", {}], ["df-a4", "df-u4", "df-m3", {}], ["df-a5", "df-u5", "df-m3", {}],
+    ["df-c1", "df-m1", "df-b1", {}], ["df-c2", "df-m2", "df-b2", {}], ["df-c3", "df-m3", "df-b3", {}],
+    ["df-c4", "df-m2", "df-b1", {}], ["df-c5", "df-m3", "df-b2", {}],
+    ["df-k1", "df-b1", "df-da", { etiqueta: "MEMBER_OF", ancho: 4 }],
+    ["df-k2", "df-b2", "df-da", { etiqueta: "MEMBER_OF", ancho: 4 }],
+    ["df-k3", "df-b3", "df-da", { etiqueta: "MEMBER_OF", ancho: 4 }],
+  ]);
+  const N = d.nodos, A = d.aristas;
+  const corte = ["df-k1", "df-k2", "df-k3"];
+  const pasos = ["1 medir", "2 calcular el corte", "3 revocar", "4 verificar"].map((t, i) => {
+    const e = svgTexto(t, { x: 200 + i * 370, y: 930, "text-anchor": "middle", class: "etq-zona", opacity: 0 }, d.fondo);
+    return e;
+  });
+  const antes = svgTexto("38 de 300 usuarios llegan", { x: 1320, y: 650, "text-anchor": "middle", class: "etq", opacity: 0 }, d.capaEncima);
+  const despues = svgTexto("0 de 300 usuarios llegan", { x: 1320, y: 650, "text-anchor": "middle", class: "etq", opacity: 0 }, d.capaEncima);
+  despues.style.fill = P.verde;
+  const cruces = corte.map((id, i) => {
+    const a = A[id], m = a.p.getPointAtLength(a.largo / 2);
+    return d.trazo(`df-x${i}`, `M${m.x - 16} ${m.y - 16} L${m.x + 16} ${m.y + 16} M${m.x + 16} ${m.y - 16} L${m.x - 16} ${m.y + 16}`, { color: P.rojo, ancho: 6, encima: true });
+  });
+
+  const tl = gsap.timeline({ paused: true });
+  Object.values(N).forEach((n, i) => Mov.aparecer(tl, n, 0.2 + i * 0.05, { dur: 0.4 }));
+  Object.values(A).forEach((a, i) => Mov.trazar(tl, a, 0.6 + i * 0.05, { dur: 0.45 }));
+  // 1. Medir: todos los usuarios de la izquierda alcanzan el objetivo.
+  Mov.mostrar(tl, pasos[0], 2.2);
+  usuarios.forEach(([id], i) => tl.to(N[id].c, { fill: P.naranja, duration: 0.3 }, 2.4 + i * 0.08));
+  Mov.mostrar(tl, antes, 2.9);
+  // 2. Calcular el corte minimo: los accesos que todas las rutas comparten.
+  Mov.mostrar(tl, pasos[1], 4.3);
+  corte.forEach((id, i) => Mov.colorArista(tl, A[id], P.rojo, 4.5 + i * 0.15, { ancho: 6 }));
+  corte.forEach((id, i) => tl.set(A[id].p, { strokeDasharray: "12 9", strokeDashoffset: 0 }, 4.9 + i * 0.15));
+  // 3. Revocar esos accesos.
+  Mov.mostrar(tl, pasos[2], 6.3);
+  cruces.forEach((c, i) => Mov.trazar(tl, c, 6.5 + i * 0.15, { dur: 0.35 }));
+  corte.forEach((id, i) => { tl.to(A[id].p, { opacity: 0.18, duration: 0.4 }, 7.2 + i * 0.1); tl.to(A[id].flecha, { opacity: 0.18, duration: 0.4 }, 7.2 + i * 0.1); });
+  // 4. Verificar: un recorrido nuevo confirma que nadie llega.
+  Mov.mostrar(tl, pasos[3], 8.3);
+  usuarios.forEach(([id], i) => tl.to(N[id].c, { fill: P.verde, duration: 0.3 }, 8.6 + i * 0.08));
+  ["df-m1", "df-m2", "df-m3", "df-b1", "df-b2", "df-b3"].forEach((id, i) => tl.to(N[id].c, { fill: P.verde, duration: 0.3 }, 8.9 + i * 0.06));
+  Mov.ocultar(tl, antes, 9.2);
+  Mov.mostrar(tl, despues, 9.45);
+  Mov.destello(tl, N["df-da"], 9.5, P.verde);
+  window.__timelines["defensor"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

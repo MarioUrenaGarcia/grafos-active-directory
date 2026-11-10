@@ -1,0 +1,94 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #ci-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="ciclo" data-width="1600" data-height="1000">
+  <svg id="ci-lienzo" class="clip" data-start="0" data-duration="13" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Las fases de un ataque sobre el directorio, recorridas como un camino que
+  // cruza los niveles de la red hasta el nucleo del dominio.
+  const svg = document.getElementById("ci-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  const zonas = [[0, 530, "estaciones de trabajo"], [530, 540, "servidores"], [1070, 530, "núcleo del dominio (nivel 0)"]].map(([x, w, nombre], i) => {
+    const g = svgEl("g", { opacity: 0 }, d.fondo);
+    svgEl("rect", { x, y: 0, width: w, height: 860, fill: i === 2 ? "#fbeeec" : i === 1 ? "#f3f5f9" : "#f8f9fc" }, g);
+    svgTexto(nombre, { x: x + w / 2, y: 62, "text-anchor": "middle", class: "etq-zona" }, g);
+    return g;
+  });
+  d.desde([
+    ["ci-u1", 140, 560, { tipo: "User", r: 26, etiqueta: "usuario común" }],
+    ["ci-w1", 330, 380, { tipo: "Computer", r: 22, etiqueta: "PC-12" }],
+    ["ci-la", 420, 640, { tipo: "User", r: 22, etiqueta: "soporte.local" }],
+    ["ci-w2", 230, 760, { tipo: "Computer", r: 18 }],
+    ["ci-g1", 680, 640, { tipo: "Group", r: 24, etiqueta: "IT" }],
+    ["ci-s1", 840, 380, { tipo: "Computer", r: 24, etiqueta: "SRV-APP" }],
+    ["ci-s2", 900, 720, { tipo: "Computer", r: 18 }],
+    ["ci-a1", 1000, 520, { tipo: "User", r: 24, etiqueta: "admin.dominio" }],
+    ["ci-da", 1300, 520, { tipo: "objetivo", r: 38, etiqueta: "DOMAIN ADMINS" }],
+    ["ci-dc", 1470, 300, { tipo: "hv", r: 26, etiqueta: "controlador" }],
+    ["ci-dom", 1470, 740, { tipo: "hv", r: 26, etiqueta: "dominio" }],
+  ], [
+    ["ci-e1", "ci-u1", "ci-w1", { etiqueta: "CAN_RDP", ancho: 4 }],
+    ["ci-e2", "ci-w1", "ci-la", { etiqueta: "HAS_SESSION", ancho: 4 }],
+    ["ci-e3", "ci-la", "ci-g1", { etiqueta: "MEMBER_OF", ancho: 4 }],
+    ["ci-e4", "ci-g1", "ci-s1", { etiqueta: "ADMIN_TO", ancho: 4 }],
+    ["ci-e5", "ci-s1", "ci-a1", { etiqueta: "HAS_SESSION", ancho: 4 }],
+    ["ci-e6", "ci-a1", "ci-da", { etiqueta: "MEMBER_OF", ancho: 4 }],
+    ["ci-e7", "ci-da", "ci-dc", { etiqueta: "ADMIN_TO", ancho: 4 }],
+    ["ci-e8", "ci-da", "ci-dom", { etiqueta: "GENERIC_ALL", ancho: 4 }],
+    ["ci-x1", "ci-u1", "ci-w2", {}], ["ci-x2", "ci-w2", "ci-la", {}],
+    ["ci-x3", "ci-g1", "ci-s2", {}], ["ci-x4", "ci-s2", "ci-a1", { curva: 40 }],
+  ]);
+  const N = d.nodos, A = d.aristas;
+  const fases = ["punto de apoyo", "reconocimiento", "movimiento lateral", "escalada", "control del dominio"];
+  const linea = svgEl("line", { x1: 160, y1: 930, x2: 1440, y2: 930, stroke: P.borde, "stroke-width": 4, opacity: 0 }, d.fondo);
+  const marcas = fases.map((f, i) => {
+    const x = 160 + i * 320;
+    const g = svgEl("g", { opacity: 0 }, d.fondo);
+    const c = svgEl("circle", { cx: x, cy: 930, r: 12, fill: P.borde }, g);
+    const t = svgTexto(f, { x, y: 975, "text-anchor": "middle", class: "etq-chica" }, g);
+    t.style.fill = P.tenue;
+    return { g, c, t };
+  });
+  const activar = (i, t) => {
+    tl.to(marcas[i].c, { fill: P.naranja, duration: 0.3 }, t);
+    tl.to(marcas[i].t, { fill: P.navy, duration: 0.3 }, t);
+  };
+
+  const tl = gsap.timeline({ paused: true });
+  zonas.forEach((z, i) => Mov.mostrar(tl, z, 0.2 + i * 0.15, 0.5));
+  Mov.mostrar(tl, linea, 0.5, 0.4);
+  marcas.forEach((m, i) => Mov.mostrar(tl, m.g, 0.6 + i * 0.08, 0.3));
+  // 1. Punto de apoyo: una cuenta comun comprometida (por ejemplo, por phishing).
+  activar(0, 1.2);
+  Mov.aparecer(tl, N["ci-u1"], 1.2);
+  Mov.destello(tl, N["ci-u1"], 1.5, P.naranja);
+  // 2. Reconocimiento: el atacante consulta el directorio y obtiene el grafo.
+  activar(1, 2.4);
+  ["ci-w1", "ci-w2", "ci-la", "ci-g1", "ci-s1", "ci-s2", "ci-a1", "ci-da", "ci-dc", "ci-dom"].forEach((id, i) => Mov.aparecer(tl, N[id], 2.5 + i * 0.07, { dur: 0.4 }));
+  Object.keys(A).forEach((id, i) => Mov.trazar(tl, A[id], 2.9 + i * 0.06, { dur: 0.45 }));
+  // 3. Movimiento lateral entre estaciones y servidores.
+  activar(2, 4.9);
+  ["ci-e1", "ci-e2", "ci-e3", "ci-e4"].forEach((id, i) => Mov.colorArista(tl, A[id], P.naranja, 5.0 + i * 0.45));
+  // 4. Escalada: la sesion del administrador del dominio abre el nucleo.
+  activar(3, 7.0);
+  Mov.colorArista(tl, A["ci-e5"], P.naranja, 7.1);
+  Mov.destello(tl, N["ci-a1"], 7.4, P.naranja);
+  Mov.colorArista(tl, A["ci-e6"], P.naranja, 7.7);
+  // 5. Control del dominio.
+  activar(4, 8.6);
+  Mov.destello(tl, N["ci-da"], 8.6, P.rojo);
+  Mov.colorArista(tl, A["ci-e7"], P.rojo, 8.9);
+  Mov.colorArista(tl, A["ci-e8"], P.rojo, 8.9);
+  Mov.destello(tl, N["ci-dc"], 9.2, P.rojo);
+  Mov.destello(tl, N["ci-dom"], 9.2, P.rojo);
+  window.__timelines["ciclo"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

@@ -1,0 +1,64 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #ad-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="adyacencia" data-width="1600" data-height="1000">
+  <svg id="ad-lienzo" class="clip" data-start="0" data-duration="11" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Cada arista se guarda dos veces: en la lista de salida de su origen y en
+  // la de entrada de su destino. Asi se recorre el grafo en ambos sentidos.
+  const svg = document.getElementById("ad-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  d.desde([
+    ["ad-A", 160, 500, { tipo: "User", r: 30, etiqueta: "A" }],
+    ["ad-B", 440, 250, { tipo: "Group", r: 30, etiqueta: "B" }],
+    ["ad-C", 440, 750, { tipo: "Computer", r: 30, etiqueta: "C" }],
+    ["ad-D", 700, 500, { tipo: "objetivo", r: 34, etiqueta: "D" }],
+  ], [
+    ["ad-e0", "ad-A", "ad-B", { ancho: 4, color: P.navy6 }], ["ad-e1", "ad-A", "ad-C", { ancho: 4, color: P.navy6 }],
+    ["ad-e2", "ad-B", "ad-D", { ancho: 4, color: P.navy6 }], ["ad-e3", "ad-C", "ad-D", { ancho: 4, color: P.navy6 }],
+  ]);
+  const N = d.nodos, A = d.aristas;
+  const filas = ["A", "B", "C", "D"], Y = { A: 330, B: 470, C: 610, D: 750 };
+  const cab1 = svgTexto("salida: lo que controla", { x: 1000, y: 230, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.fondo);
+  const cab2 = svgTexto("entrada: quien lo controla", { x: 1380, y: 230, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.fondo);
+  const etqFilas = filas.map(f => [
+    d.caja(`ad-ls-${f}`, 850, Y[f] - 40, 70, 80, { relleno: P.navy, borde: P.navy, texto: [f], tinta: "#fff", dyTexto: 9 }),
+    d.caja(`ad-le-${f}`, 1230, Y[f] - 40, 70, 80, { relleno: P.navy, borde: P.navy, texto: [f], tinta: "#fff", dyTexto: 9 }),
+  ]);
+  const cuenta = { s: {}, e: {} };
+  const celda = (lado, fila, letra) => {
+    const k = cuenta[lado][fila] = (cuenta[lado][fila] || 0);
+    cuenta[lado][fila]++;
+    const x = (lado === "s" ? 940 : 1320) + k * 84;
+    return d.caja(`ad-c${lado}-${fila}-${k}`, x, Y[fila] - 34, 70, 68, { relleno: lado === "s" ? "#e8eef9" : "#f1e9f6", borde: P.borde, texto: [letra], dyTexto: 9 });
+  };
+  const orden = [["ad-e0", "A", "B"], ["ad-e1", "A", "C"], ["ad-e2", "B", "D"], ["ad-e3", "C", "D"]];
+
+  const tl = gsap.timeline({ paused: true });
+  Object.values(N).forEach((n, i) => Mov.aparecer(tl, n, 0.2 + i * 0.12));
+  Mov.mostrar(tl, cab1, 0.8); Mov.mostrar(tl, cab2, 0.9);
+  etqFilas.forEach(([a, b], i) => { Mov.caja(tl, a.g, 1.0 + i * 0.08); Mov.caja(tl, b.g, 1.05 + i * 0.08); });
+  orden.forEach(([id, o, dd], i) => {
+    const t = 1.9 + i * 1.8;
+    Mov.trazar(tl, A[id], t, { dur: 0.6 });
+    const cs = celda("s", o, dd), ce = celda("e", dd, o);
+    // Una ficha lleva el destino a la lista de salida del origen; otra, el origen a la de entrada.
+    const m = A[id].p.getPointAtLength(A[id].largo / 2);
+    const vs = svgEl("path", { d: `M${m.x} ${m.y} Q${(m.x + cs.cx) / 2} ${m.y - 160} ${cs.cx} ${cs.cy}`, fill: "none", stroke: "none" }, d.fondo);
+    const ve = svgEl("path", { d: `M${m.x} ${m.y} Q${(m.x + ce.cx) / 2} ${m.y + 180} ${ce.cx} ${ce.cy}`, fill: "none", stroke: "none" }, d.fondo);
+    Mov.viajar(tl, d.ficha(`ad-fs${i}`, { r: 16, color: P.azul }), vs, t + 0.6, 0.7);
+    Mov.viajar(tl, d.ficha(`ad-fe${i}`, { r: 16, color: P.morado }), ve, t + 0.75, 0.75);
+    Mov.caja(tl, cs.g, t + 1.25, { dur: 0.35 });
+    Mov.caja(tl, ce.g, t + 1.45, { dur: 0.35 });
+  });
+  window.__timelines["adyacencia"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

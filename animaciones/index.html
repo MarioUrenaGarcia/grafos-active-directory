@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1600, height=1000" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <script src="assets/lib/diagrama.js"></script>
+    <script src="assets/lib/red-flujo.js"></script>
+    <style>
+      /* Paleta y tipografia de la aplicacion (DISENO.md del proyecto). */
+      @font-face { font-family: "Bebas Neue"; src: url("assets/fonts/BebasNeue-Regular.ttf") format("truetype"); }
+      @font-face { font-family: "Bahnschrift"; src: local("Bahnschrift"); }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1600px; height: 1000px; overflow: hidden; background: #ffffff; }
+      #root { position: relative; width: 100%; height: 100%; background: #ffffff; }
+      .etq { font: 600 24px Bahnschrift, sans-serif; fill: #1b2430; }
+      .etq-chica { font: 600 19px Bahnschrift, sans-serif; fill: #1b2430; }
+      .etq-ar { font: 700 17px "JetBrains Mono", monospace; fill: #7b8aa0; }
+      .etq-titulo { font: 400 34px "Bebas Neue", sans-serif; letter-spacing: 1px; fill: #11263f; }
+      .etq-mono { font: 700 20px "JetBrains Mono", monospace; fill: #11263f; }
+      .etq-caja { font: 600 24px Bahnschrift, sans-serif; fill: #1b2430; }
+      .etq-caja2 { font: 400 19px Bahnschrift, sans-serif; fill: #44515f; }
+      .etq-cap { font: 700 26px Bahnschrift, "Segoe UI", sans-serif; fill: #11263f; }
+      .etq-ficha { font: 700 15px "JetBrains Mono", monospace; fill: #11263f; }
+      .etq-zona { font: 400 30px "Bebas Neue", sans-serif; letter-spacing: 1px; fill: #7b8aa0; }
+      .etq-num { font: 400 72px "Bebas Neue", sans-serif; fill: #11263f; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="265"
+         data-width="1600" data-height="1000">
+      <div id="logo" data-composition-id="logo" data-composition-src="compositions/logo.html"
+           data-start="0" data-duration="6" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="dominio" data-composition-id="dominio" data-composition-src="compositions/dominio.html"
+           data-start="6" data-duration="10" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="kerberos" data-composition-id="kerberos" data-composition-src="compositions/kerberos.html"
+           data-start="16" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="sesion" data-composition-id="sesion" data-composition-src="compositions/sesion.html"
+           data-start="27" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="anidados" data-composition-id="anidados" data-composition-src="compositions/anidados.html"
+           data-start="38" data-duration="10" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="acl" data-composition-id="acl" data-composition-src="compositions/acl.html"
+           data-start="48" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="escalada" data-composition-id="escalada" data-composition-src="compositions/escalada.html"
+           data-start="59" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="ciclo" data-composition-id="ciclo" data-composition-src="compositions/ciclo.html"
+           data-start="70" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="defensor" data-composition-id="defensor" data-composition-src="compositions/defensor.html"
+           data-start="83" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="adyacencia" data-composition-id="adyacencia" data-composition-src="compositions/adyacencia.html"
+           data-start="96" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="bfs" data-composition-id="bfs" data-composition-src="compositions/bfs.html"
+           data-start="107" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="inverso" data-composition-id="inverso" data-composition-src="compositions/inverso.html"
+           data-start="120" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="dijkstra" data-composition-id="dijkstra" data-composition-src="compositions/dijkstra.html"
+           data-start="131" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="warshall" data-composition-id="warshall" data-composition-src="compositions/warshall.html"
+           data-start="144" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="tarjan" data-composition-id="tarjan" data-composition-src="compositions/tarjan.html"
+           data-start="157" data-duration="12" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="brandes" data-composition-id="brandes" data-composition-src="compositions/brandes.html"
+           data-start="169" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="cortevertice" data-composition-id="cortevertice" data-composition-src="compositions/cortevertice.html"
+           data-start="180" data-duration="12" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="redflujo" data-composition-id="redflujo" data-composition-src="compositions/redflujo.html"
+           data-start="192" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="aumento" data-composition-id="aumento" data-composition-src="compositions/aumento.html"
+           data-start="203" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="corteminimo" data-composition-id="corteminimo" data-composition-src="compositions/corteminimo.html"
+           data-start="216" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="arquitectura" data-composition-id="arquitectura" data-composition-src="compositions/arquitectura.html"
+           data-start="229" data-duration="12" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="web" data-composition-id="web" data-composition-src="compositions/web.html"
+           data-start="241" data-duration="13" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+      <div id="visor" data-composition-id="visor" data-composition-src="compositions/visor.html"
+           data-start="254" data-duration="11" data-track-index="1" data-track-kind="graphics"
+           data-width="1600" data-height="1000"></div>
+    </div>
+    <script>
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

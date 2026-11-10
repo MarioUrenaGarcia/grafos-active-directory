@@ -1,0 +1,64 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #se-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="sesion" data-width="1600" data-height="1000">
+  <svg id="se-lienzo" class="clip" data-start="0" data-duration="11" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Por que una sesion es una arista: el administrador inicia sesion en un
+  // equipo y su credencial queda en la memoria; quien controla el equipo la
+  // obtiene y, con ella, todo lo que el administrador puede hacer.
+  const svg = document.getElementById("se-lienzo");
+  const d = new Diagrama(svg);
+  const P = PALETA;
+  const equipo = d.caja("se-eq", 560, 330, 480, 330, { relleno: "#ffffff", borde: P.turquesa, grosor: 4, texto: ["COMP00045"], dyTexto: -110, clase: "etq-titulo" });
+  const memoria = d.caja("se-mem", 640, 470, 320, 120, { relleno: P.fondo, borde: P.borde, texto: ["memoria del equipo"], dyTexto: -30, clase: "etq-caja2" });
+  d.desde([
+    ["se-adm", 220, 290, { tipo: "User", r: 30, etiqueta: "PingFrankel165 (admin)" }],
+    ["se-at", 220, 760, { color: P.navy, r: 30, etiqueta: "atacante (CaronOstrye16)" }],
+    ["se-da", 1380, 500, { tipo: "objetivo", r: 40, etiqueta: "DOMAIN ADMINS", etqArriba: true }],
+  ]);
+  const ingreso = d.trazo("se-in", "M250 300 C380 330 470 400 560 430", { color: P.azul, ancho: 4 });
+  const control = d.trazo("se-ct", "M250 745 C380 700 470 620 560 590", { color: P.navy, ancho: 5 });
+  const salida = d.trazo("se-sa", "M800 560 C700 700 450 760 255 760", { color: P.naranja, ancho: 4 });
+  const escala = d.trazo("se-es", "M255 730 C700 820 1150 700 1345 525", { color: P.naranja, ancho: 6 });
+  const cred = d.ficha("se-cred", { ancho: 150, color: P.ambar, texto: "credencial" });
+  const etqIn = svgTexto("inicia sesión (HAS_SESSION)", { x: 470, y: 400, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+  const etqCt = svgTexto("controla el equipo (EXECUTE_DCOM)", { x: 420, y: 700, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+  const etqEs = svgTexto("actúa como el administrador (MEMBER_OF)", { x: 950, y: 820, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+
+  const tl = gsap.timeline({ paused: true });
+  Mov.caja(tl, equipo.g, 0.2);
+  Mov.caja(tl, memoria.g, 0.5);
+  Mov.aparecer(tl, d.nodos["se-adm"], 0.8);
+  Mov.aparecer(tl, d.nodos["se-da"], 1.0);
+  // 1. El administrador inicia sesion: su credencial queda guardada en memoria.
+  Mov.trazar(tl, ingreso, 1.5, { dur: 0.6 });
+  Mov.mostrar(tl, etqIn, 1.8);
+  // La ficha baja del administrador a la memoria y se queda alli.
+  const bajada = svgEl("path", { d: "M250 300 C420 320 700 420 800 540", fill: "none", stroke: "none" }, d.fondo);
+  Mov.viajar(tl, cred, bajada, 2.2, 1.0, { quedarse: true });
+  // 2. Aparece el atacante, que logra ejecutar codigo en el equipo.
+  Mov.aparecer(tl, d.nodos["se-at"], 3.8);
+  Mov.trazar(tl, control, 4.3, { dur: 0.7 });
+  Mov.mostrar(tl, etqCt, 4.6);
+  tl.to(equipo.rect, { stroke: P.naranja, duration: 0.3 }, 5.0);
+  Mov.destello(tl, d.nodos["se-at"], 5.0, P.naranja);
+  // 3. Toma la credencial de la memoria...
+  Mov.trazar(tl, salida, 5.8, { dur: 0.5 });
+  tl.to(cred, { opacity: 0, duration: 0.15 }, 5.8);
+  const cred2 = d.ficha("se-cred2", { ancho: 150, color: P.ambar, texto: "credencial" });
+  Mov.viajar(tl, cred2, salida.p, 5.9, 1.0, { quedarse: true });
+  // 4. ...y con ella llega al objetivo.
+  Mov.trazar(tl, escala, 7.3, { dur: 0.9 });
+  Mov.mostrar(tl, etqEs, 7.8);
+  Mov.destello(tl, d.nodos["se-da"], 8.3, P.rojo);
+  window.__timelines["sesion"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

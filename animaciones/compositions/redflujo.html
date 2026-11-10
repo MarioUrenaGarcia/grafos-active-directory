@@ -1,0 +1,42 @@
+<template>
+<style>
+  #root { position: absolute; inset: 0; background: #ffffff; }
+  #rf-lienzo { position: absolute; left: 0; top: 0; width: 1600px; height: 1000px; }
+</style>
+<div id="root" data-composition-id="redflujo" data-width="1600" data-height="1000">
+  <svg id="rf-lienzo" class="clip" data-start="0" data-duration="11" data-track-index="0"
+       viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg"></svg>
+</div>
+<script>
+(function () {
+  // Construccion de la red de flujo: primero el grafo de accesos con su
+  // capacidad (numero de accesos revocables del par; infinita si es
+  // estructural), luego la superfuente S y el supersumidero T.
+  const d = new Diagrama(document.getElementById("rf-lienzo"));
+  const A = construirRed(d, "rf", { conCapacidad: true });
+  const N = id => d.nodos[`rf-${id}`];
+  const nota = svgTexto("capacidad: 1 o 2 si se puede revocar; infinita si es estructural (CONTAINS)", { x: 800, y: 950, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+
+  const tl = gsap.timeline({ paused: true });
+  // 1. El grafo de accesos entre los usuarios y el objetivo.
+  ["u1", "u2", "u3", "u4"].forEach((k, i) => Mov.aparecer(tl, N(k), 0.2 + i * 0.1));
+  ["g", "c", "ou"].forEach((k, i) => Mov.aparecer(tl, N(k), 0.7 + i * 0.1));
+  ["b1", "b2", "b3"].forEach((k, i) => Mov.aparecer(tl, N(k), 1.1 + i * 0.1));
+  Mov.aparecer(tl, N("DA"), 1.5, { dur: 0.6 });
+  ["u1-g", "u2-g", "u2-c", "u3-ou", "u4-c", "g-c", "g-b1", "c-b2", "ou-b3", "b1-DA", "b2-DA", "b3-DA"]
+    .forEach((k, i) => Mov.trazar(tl, A[k], 2.0 + i * 0.18, { dur: 0.5 }));
+  tl.set(A["ou-b3"].p, { strokeDasharray: "10 9", strokeDashoffset: 0 }, 4.7);
+  Mov.mostrar(tl, nota, 4.4);
+  // 2. La superfuente alimenta a todos los usuarios con capacidad infinita.
+  Mov.aparecer(tl, N("S"), 5.6, { dur: 0.6 });
+  ["S-u1", "S-u2", "S-u3", "S-u4"].forEach((k, i) => Mov.trazar(tl, A[k], 5.9 + i * 0.12, { dur: 0.45 }));
+  // 3. El objetivo desemboca en el supersumidero T.
+  Mov.aparecer(tl, N("T"), 7.0, { dur: 0.6 });
+  Mov.trazar(tl, A["DA-T"], 7.3, { dur: 0.5 });
+  Mov.destello(tl, N("S"), 8.2, "#2e5aac");
+  Mov.destello(tl, N("T"), 8.4, "#c0392b");
+  window.__timelines["redflujo"] = tl;
+  tl.seek(0);
+})();
+</script>
+</template>

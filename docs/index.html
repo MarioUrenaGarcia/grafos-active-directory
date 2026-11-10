@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rutas de acceso y defensa mínima en Active Directory</title>
+<meta name="description" content="Proyecto de Matemáticas Discretas: un entorno ficticio de Active Directory modelado como grafo dirigido, rutas de acceso y plan de defensa mínimo por flujo máximo y corte mínimo.">
+<link rel="icon" href="presentacion/recursos/logo.svg">
+<style>
+  /* Bebas Neue (Dharma Type, SIL Open Font License 1.1): presentacion/recursos/OFL-BebasNeue.txt */
+  @font-face { font-family: "Bebas Neue"; src: url("presentacion/recursos/BebasNeue-Regular.ttf") format("truetype"); font-display: swap; }
+  :root {
+    --navy-900: #11263f; --navy-800: #17304f; --navy-700: #1c3350; --navy-600: #33496b;
+    --azul: #2e5aac; --verde: #1a7f43; --rojo: #c0392b; --naranja: #e67e22; --ambar: #ffd37a;
+    --fondo: #e9edf4; --texto: #1b2430; --tenue: #5b6b80; --borde: #d5dce7; --blanco: #ffffff;
+    --claro: #e8edf5; --claro-tenue: #c3cfdf; --enlace: #8fb4ee;
+    --f-titulo: "Bebas Neue", "Bahnschrift Condensed", "Arial Narrow", sans-serif;
+    --f-texto: Bahnschrift, "DIN Alternate", "Segoe UI", system-ui, sans-serif;
+    --f-mono: ui-monospace, Consolas, "Cascadia Mono", Menlo, monospace;
+    --curva: cubic-bezier(.2, .7, .2, 1);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 17px/1.55 var(--f-texto); }
+  img { max-width: 100%; height: auto; }
+  a { color: var(--azul); }
+  a:focus-visible { outline: 2px solid var(--enlace); outline-offset: 3px; border-radius: 4px; }
+  .envoltura { width: min(1160px, 100% - 40px); margin: 0 auto; }
+  h1, h2, h3 { font-family: var(--f-titulo); font-weight: 400; letter-spacing: .02em; margin: 0; color: var(--navy-900); }
+  .eyebrow { font: 400 21px/1 var(--f-titulo); letter-spacing: .1em; color: var(--azul); margin: 0 0 12px; }
+  code { font-family: var(--f-mono); font-size: .88em; background: #dfe6f0; border-radius: 5px; padding: 1px 6px; color: var(--navy-900); }
+
+  /* Cabecera */
+  .cabecera { background: var(--navy-900); color: var(--claro); padding: 56px 0 64px; }
+  .cabecera .envoltura { display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: center; }
+  .cabecera .eyebrow { color: var(--ambar); }
+  .cabecera h1 { color: var(--blanco); font-size: clamp(46px, 7.4vw, 92px); line-height: .94; margin: 0 0 22px; }
+  .cabecera .intro { font-size: 19px; color: var(--claro-tenue); max-width: 720px; margin: 0 0 30px; }
+  .cabecera .intro b { color: var(--blanco); font-weight: 600; }
+  .logo-grande { width: 220px; height: 220px; display: block; }
+  .cifras { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 760px; }
+  .cifras li { background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: 12px; padding: 12px 16px 10px; }
+  .cifras .n { display: block; font: 400 40px/1 var(--f-titulo); color: var(--ambar); letter-spacing: .02em; }
+  .cifras .t { display: block; font-size: 14px; color: var(--claro-tenue); line-height: 1.35; margin-top: 4px; }
+
+  /* Accesos */
+  .accesos { padding: 56px 0 60px; }
+  .rejilla-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+  .acceso { position: relative; background: var(--blanco); border: 1px solid var(--borde); border-top: 10px solid var(--azul);
+            border-radius: 16px; padding: 26px 26px 24px; display: flex; flex-direction: column;
+            transition: border-color .15s var(--curva), background-color .15s var(--curva); }
+  .acceso.naranja { border-top-color: var(--naranja); }
+  .acceso.verde { border-top-color: var(--verde); }
+  .acceso:hover { border-left-color: var(--navy-600); border-right-color: var(--navy-600); border-bottom-color: var(--navy-600); background: #fbfcfe; }
+  .icono { width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; margin-bottom: 18px;
+           background: var(--azul); color: var(--blanco); }
+  .naranja .icono { background: var(--naranja); color: var(--navy-900); }
+  .verde .icono { background: var(--verde); }
+  .icono svg { width: 32px; height: 32px; }
+  .acceso h3 { font-size: 38px; line-height: 1; margin-bottom: 10px; }
+  .acceso h3 a { color: inherit; text-decoration: none; }
+  /* El enlace principal cubre toda la tarjeta: cualquier punto de ella la abre. */
+  .acceso h3 a::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+  .acceso h3 a:focus-visible { outline: none; }
+  .acceso h3 a:focus-visible::after { outline: 3px solid var(--enlace); outline-offset: 2px; }
+  .acceso p { margin: 0 0 20px; color: var(--tenue); flex: 1; }
+  .botones { display: flex; flex-wrap: wrap; gap: 10px; }
+  .boton { display: inline-block; background: var(--navy-900); color: var(--blanco); border-radius: 10px; padding: 10px 18px;
+           font-weight: 600; font-size: 16px; text-decoration: none; }
+  .boton.secundario { position: relative; z-index: 1; background: var(--blanco); color: var(--navy-900); border: 2px solid var(--navy-900); padding: 8px 16px;
+                      transition: background-color .15s var(--curva); }
+  .boton.secundario:hover { background: var(--fondo); }
+
+  /* Franja de animaciones */
+  .franja { background: var(--navy-900); color: var(--claro); padding: 60px 0 66px; }
+  .franja .eyebrow { color: var(--ambar); }
+  .franja h2 { color: var(--blanco); font-size: clamp(38px, 5vw, 60px); line-height: 1; margin-bottom: 10px; }
+  .franja .lead { color: var(--claro-tenue); max-width: 760px; margin: 0 0 30px; }
+  .galeria { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+  .galeria figure { margin: 0; background: var(--blanco); border-radius: 16px; overflow: hidden; border: 1px solid var(--navy-600); }
+  .galeria img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: contain; background: var(--blanco); }
+  .galeria figcaption { color: var(--texto); font-size: 15px; line-height: 1.45; padding: 14px 18px 16px; border-top: 1px solid var(--borde); }
+  .galeria figcaption b { display: block; font: 400 24px/1.1 var(--f-titulo); letter-spacing: .03em; color: var(--navy-900); margin-bottom: 4px; }
+
+  /* Que vas a aprender */
+  .aprender { padding: 60px 0 64px; }
+  .aprender h2 { font-size: clamp(38px, 5vw, 60px); line-height: 1; margin-bottom: 28px; }
+  .temas { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .temas li { background: var(--blanco); border: 1px solid var(--borde); border-radius: 14px; padding: 20px 22px; display: grid;
+              grid-template-columns: auto 1fr; gap: 4px 16px; align-items: start; }
+  .temas .num { grid-row: span 2; font: 400 48px/1 var(--f-titulo); color: var(--azul); }
+  .temas li:nth-child(6) .num { color: var(--verde); }
+  .temas h3 { font-size: 26px; line-height: 1.05; }
+  .temas p { margin: 0; font-size: 15.5px; color: var(--tenue); }
+
+  /* Pie */
+  .pie { background: var(--navy-900); color: var(--claro-tenue); padding: 40px 0 46px; font-size: 15px; }
+  .pie .envoltura { display: grid; grid-template-columns: auto 1fr; gap: 22px 28px; align-items: start; }
+  .pie img { width: 52px; height: 52px; display: block; }
+  .pie p { margin: 0 0 10px; max-width: 860px; }
+  .pie b { color: var(--blanco); font-weight: 600; }
+  .pie a { color: var(--enlace); }
+  .pie nav { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 16px; }
+
+  @media (max-width: 760px) {
+    body { font-size: 16px; }
+    .cabecera { padding: 36px 0 44px; }
+    .cabecera .envoltura { grid-template-columns: 1fr; gap: 22px; }
+    .logo-grande { width: 84px; height: 84px; order: -1; }
+    .cabecera .intro { font-size: 17px; }
+    .cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cifras .n { font-size: 34px; }
+    .accesos, .aprender { padding: 40px 0 44px; }
+    .franja { padding: 44px 0 48px; }
+    .galeria, .temas { grid-template-columns: 1fr; }
+    .acceso h3 { font-size: 34px; }
+    .pie .envoltura { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .acceso, .boton.secundario { transition: none; }
+  }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute">
+  <symbol id="ic-reproducir" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5 18 12 8 18.5z"/></g><g fill="currentColor"><circle cx="8" cy="5.5" r="2.3"/><circle cx="8" cy="18.5" r="2.3"/><circle cx="18" cy="12" r="2.3"/></g></symbol>
+  <symbol id="ic-bfs" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12V5.2M12 12l5.9 3.4M12 12l-5.9 3.4"/><circle cx="12" cy="12" r="9.4" stroke-width="1.3" stroke-dasharray="1.4 2.6"/></g><g fill="currentColor"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="5.2" r="1.9"/><circle cx="17.9" cy="15.4" r="1.9"/><circle cx="6.1" cy="15.4" r="1.9"/></g></symbol>
+  <symbol id="ic-panel" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/></g><g fill="currentColor"><circle cx="6.25" cy="8.5" r="1.2"/><circle cx="6.25" cy="12" r="1.2"/><circle cx="6.25" cy="15.5" r="1.2"/></g></symbol>
+</svg>
+
+<header class="cabecera">
+  <div class="envoltura">
+    <div>
+      <p class="eyebrow">Proyecto final de Matemáticas Discretas</p>
+      <h1>Rutas de acceso y defensa mínima en Active Directory</h1>
+      <p class="intro">Un entorno ficticio de Active Directory convertido en un grafo dirigido, donde una arista <b>A &rarr; B</b> significa que quien controla A puede llegar a controlar B. Con algoritmos clásicos de teoría de grafos se encuentran las rutas que llegan al núcleo del dominio y, con el teorema de flujo máximo y corte mínimo, se calcula el conjunto más pequeño de accesos que hay que revocar para cerrarlas todas. Cada algoritmo está escrito desde cero en Python, sin dependencias externas.</p>
+      <ul class="cifras" aria-label="Cifras del proyecto">
+        <li><span class="n">953</span><span class="t">objetos del directorio</span></li>
+        <li><span class="n">4698</span><span class="t">accesos entre objetos</span></li>
+        <li><span class="n">15</span><span class="t">accesos en el corte mínimo</span></li>
+        <li><span class="n">38 &rarr; 0</span><span class="t">usuarios expuestos, antes y después</span></li>
+      </ul>
+    </div>
+    <img class="logo-grande" src="presentacion/recursos/logo.svg" width="220" height="220" alt="Logo: tres objetos con accesos hacia una diana roja, interrumpidos por una barra ámbar que representa el corte mínimo">
+  </div>
+</header>
+
+<main>
+  <section class="accesos" aria-labelledby="t-accesos">
+    <div class="envoltura">
+      <p class="eyebrow" id="t-accesos">Empieza aquí</p>
+      <div class="rejilla-3">
+        <article class="acceso azul">
+          <div class="icono" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#ic-reproducir"/></svg></div>
+          <h3><a href="presentacion/index.html">Presentación de estudio</a></h3>
+          <p>El proyecto completo explicado hasta el nivel técnico: fundamentos de Active Directory, el modelo de grafo, cada algoritmo y la implementación, con animaciones en video.</p>
+          <div class="botones"><span class="boton">Abrir la presentación</span></div>
+        </article>
+        <article class="acceso naranja">
+          <div class="icono" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#ic-bfs"/></svg></div>
+          <h3><a href="visor.html">Visor interactivo</a></h3>
+          <p>El grafo real en el navegador: elige un objetivo, ejecuta BFS, Dijkstra o el plan de defensa y sigue cada paso del algoritmo con el reproductor. Funciona sin servidor y sin instalar nada.</p>
+          <div class="botones"><span class="boton">Abrir el visor</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="franja" aria-labelledby="t-animaciones">
+    <div class="envoltura">
+      <p class="eyebrow">Animaciones</p>
+      <h2 id="t-animaciones">Los algoritmos, en movimiento</h2>
+      <p class="lead">Cuatro de las animaciones de la presentación: el problema, dos algoritmos y la solución.</p>
+      <div class="galeria">
+        <figure>
+          <img src="media/escalada.gif" width="800" height="500" loading="lazy" alt="Una ruta del conjunto de datos se enciende en naranja desde un usuario hasta DOMAIN ADMINS">
+          <figcaption><b>Una ruta real</b>CaronOstrye16 controla el equipo COMP00045 (<code>EXECUTE_DCOM</code>), donde tiene sesión PingFrankel165 (<code>HAS_SESSION</code>), miembro de DOMAIN ADMINS (<code>MEMBER_OF</code>). Tres saltos y peso 8: el camino de menor esfuerzo.</figcaption>
+        </figure>
+        <figure>
+          <img src="media/bfs.gif" width="800" height="500" loading="lazy" alt="Búsqueda en anchura que avanza por niveles desde el nodo S hasta el nodo T">
+          <figcaption><b>Búsqueda en anchura</b>BFS avanza por niveles desde S: la frontera en nodos huecos, los expandidos rellenos y la cola en orden de descubrimiento, hasta el camino mínimo S, A, E, T.</figcaption>
+        </figure>
+        <figure>
+          <img src="media/aumento.gif" width="800" height="500" loading="lazy" alt="Edmonds-Karp encuentra caminos de aumento uno a uno en una red de flujo">
+          <figcaption><b>Caminos de aumento</b>Edmonds-Karp halla con BFS un camino de aumento tras otro; cada uno suma su cuello de botella al flujo y deja aristas residuales.</figcaption>
+        </figure>
+        <figure>
+          <img src="media/defensor.gif" width="800" height="500" loading="lazy" alt="Las cuatro etapas del plan de defensa: medir, calcular el corte, revocar y verificar">
+          <figcaption><b>El plan de defensa</b>Medir, calcular el corte, revocar y verificar: de 38 de 300 usuarios con ruta a DOMAIN ADMINS se pasa a 0 de 300. Grafo ilustrativo con las cifras reales.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="aprender" aria-labelledby="t-aprender">
+    <div class="envoltura">
+      <p class="eyebrow">Contenido</p>
+      <h2 id="t-aprender">Qué vas a aprender</h2>
+      <ol class="temas">
+        <li><span class="num" aria-hidden="true">1</span><h3>Modelar con grafos</h3><p>Usuarios, equipos, grupos, GPO, OU y el dominio como vértices; 16 tipos de acceso como aristas dirigidas.</p></li>
+        <li><span class="num" aria-hidden="true">2</span><h3>Alcanzabilidad</h3><p>BFS y DFS para saber qué controla un objeto, y BFS sobre el grafo inverso para saber quién llega a un objetivo.</p></li>
+        <li><span class="num" aria-hidden="true">3</span><h3>Caminos de menor esfuerzo</h3><p>Dijkstra con un montículo y pesos por tipo de acceso, frente al camino de menos saltos.</p></li>
+        <li><span class="num" aria-hidden="true">4</span><h3>Estructura del grafo</h3><p>Componentes fuertemente conexas con Tarjan, grafo condensado y cerradura transitiva con Warshall y mapas de bits.</p></li>
+        <li><span class="num" aria-hidden="true">5</span><h3>Objetos clave</h3><p>Centralidad de intermediación con Brandes y vértices de corte que están en toda ruta hacia el objetivo.</p></li>
+        <li><span class="num" aria-hidden="true">6</span><h3>Una defensa demostrada</h3><p>Flujo máximo con Edmonds-Karp, corte mínimo y teorema de Menger: el plan más pequeño posible, verificado con un nuevo recorrido.</p></li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="envoltura">
+    <img src="presentacion/recursos/logo.svg" width="52" height="52" alt="">
+    <div>
+      <p><b>Datos.</b> Entorno de Active Directory ficticio (TestCompany.Local) creado para demostración, tomado del ejemplo de cybersecurity de Neo4j, basado en el proyecto BloodHound. El análisis es académico y defensivo: mide y reduce la exposición de un entorno de prueba.</p>
+      <p><b>Tipografía.</b> Títulos en Bebas Neue (Dharma Type), distribuida bajo la SIL Open Font License 1.1 (<a href="presentacion/recursos/OFL-BebasNeue.txt">texto de la licencia</a>). Texto en Bahnschrift o en la fuente del sistema.</p>
+      <nav aria-label="Secciones de la web">
+        <a href="presentacion/index.html">Presentación de estudio</a>
+        <a href="visor.html">Visor interactivo</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
