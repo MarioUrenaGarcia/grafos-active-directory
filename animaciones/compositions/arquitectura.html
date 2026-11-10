@@ -36,11 +36,19 @@
     ["servidor", "cortes"], ["servidor", "trazas"], ["servidor", "interfaz_web"],
     ["cli", "reporte"], ["cli", "visor"], ["cli", "servidor"], ["main", "cli"],
   ];
+  // Las dependencias que saltan una capa bajan por los huecos de 40 px entre
+  // cajas; en linea recta pasarian por debajo de los modulos intermedios.
+  const rutas = {
+    "visor>pesos": "M800 358 C800 410 665 420 665 472 L665 548 C665 600 800 610 800 662 L800 842",
+    "visor>interfaz_web": "M800 358 C800 410 935 420 935 472 L935 548 C935 600 1070 610 1070 662 L1070 842",
+    "servidor>interfaz_web": "M1070 358 C1070 410 1205 420 1205 472 L1205 548 C1205 600 1070 610 1070 662 L1070 842",
+    "trazas>pesos": "M1340 548 L1340 740 C1340 800 800 780 800 842",
+  };
   const flechas = deps.map(([a, b], i) => {
     const A0 = caja[a], B0 = caja[b];
     const x1 = A0.cx, y1 = A0.y + A0.h, x2 = B0.cx, y2 = B0.y;
     const mismo = A0.capa === B0.capa;
-    const dd = mismo ? (A0.x > B0.x ? `M${A0.x} ${A0.cy} L${B0.x + B0.w + 10} ${B0.cy}` : `M${A0.x + A0.w} ${A0.cy} L${B0.x - 10} ${B0.cy}`) : `M${x1} ${y1} C${x1} ${(y1 + y2) / 2} ${x2} ${(y1 + y2) / 2} ${x2} ${y2 - 10}`;
+    const dd = rutas[`${a}>${b}`] || (mismo ? (A0.x > B0.x ? `M${A0.x} ${A0.cy} L${B0.x + B0.w + 10} ${B0.cy}` : `M${A0.x + A0.w} ${A0.cy} L${B0.x - 10} ${B0.cy}`) : `M${x1} ${y1} C${x1} ${(y1 + y2) / 2} ${x2} ${(y1 + y2) / 2} ${x2} ${y2 - 10}`);
     const tr = d.trazo(`aq-d${i}`, dd, { color: "#9aa7b8", ancho: 2.5 });
     // Punta de flecha en el extremo del trazo.
     const fin = tr.p.getPointAtLength(tr.largo), antes = tr.p.getPointAtLength(Math.max(0, tr.largo - 12));

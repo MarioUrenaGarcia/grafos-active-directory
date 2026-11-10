@@ -18,7 +18,7 @@
   const gris = "#c9d1dd";
   const pos = { a: [200, 250], b: [420, 170], c: [400, 400], d: [720, 330], e: [900, 520],
                 f: [1280, 420], g: [300, 700], h: [520, 820], i: [600, 620] };
-  d.desde(Object.entries(pos).map(([k, [x, y]]) => [`ta-${k}`, x, y, { color: gris, r: 26, etiqueta: k }]),
+  d.desde(Object.entries(pos).map(([k, [x, y]]) => [`ta-${k}`, x, y, { color: gris, r: 26, etiqueta: k, etqArriba: k === "b" }]),
   [["a", "b"], ["b", "c"], ["c", "a"], ["c", "d"], ["d", "e"], ["e", "d", { curva: 50 }], ["e", "f"], ["a", "g"], ["g", "h"], ["h", "i"], ["i", "g"], ["i", "e"]]
     .map(([x, y, o]) => [`ta-${x}${y}`, `ta-${x}`, `ta-${y}`, Object.assign({ ancho: 3, color: P.navy6 }, o || {})]));
   const N = k => d.nodos[`ta-${k}`];
@@ -30,7 +30,12 @@
   ];
   // Capa del grafo condensado: un supernodo por componente y sus aristas.
   const cond = new Diagrama(svgEl("g", {}, svg));
-  comps.forEach((c, i) => cond.nodo(`ta-s${i}`, c.x, c.y, { color: c.color, r: 34 + c.nodos.length * 10, etiqueta: c.nombre, etqClase: "etq-titulo" }));
+  // La letra de titulo es mas alta que la de nodo: la etiqueta se separa 14 px mas
+  // del circulo. C1 la lleva arriba porque por debajo sale su arista hacia C4.
+  comps.forEach((c, i) => {
+    const n = cond.nodo(`ta-s${i}`, c.x, c.y, { color: c.color, r: 34 + c.nodos.length * 10, etiqueta: c.nombre, etqClase: "etq-titulo", etqArriba: i === 0 });
+    n.etq.setAttribute("y", i === 0 ? c.y - n.r - 18 : c.y + n.r + 40);
+  });
   [[0, 1], [1, 2], [0, 3], [3, 1]].forEach(([x, y]) => cond.arista(`ta-se${x}${y}`, `ta-s${x}`, `ta-s${y}`, { ancho: 6, color: P.navy }));
 
   const tl = gsap.timeline({ paused: true });

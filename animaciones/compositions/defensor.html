@@ -27,9 +27,11 @@
     ["df-a3", "df-u3", "df-m2", {}], ["df-a4", "df-u4", "df-m3", {}], ["df-a5", "df-u5", "df-m3", {}],
     ["df-c1", "df-m1", "df-b1", {}], ["df-c2", "df-m2", "df-b2", {}], ["df-c3", "df-m3", "df-b3", {}],
     ["df-c4", "df-m2", "df-b1", {}], ["df-c5", "df-m3", "df-b2", {}],
-    ["df-k1", "df-b1", "df-da", { etiqueta: "MEMBER_OF", ancho: 4 }],
-    ["df-k2", "df-b2", "df-da", { etiqueta: "MEMBER_OF", ancho: 4 }],
-    ["df-k3", "df-b3", "df-da", { etiqueta: "MEMBER_OF", ancho: 4 }],
+    // La cruz de revocacion cae en el centro de cada arista del corte: sus
+    // etiquetas se apartan lo mismo de la linea para quedar debajo de la cruz.
+    ["df-k1", "df-b1", "df-da", { etiqueta: "MEMBER_OF", ancho: 4, etqLado: 36 }],
+    ["df-k2", "df-b2", "df-da", { etiqueta: "MEMBER_OF", ancho: 4, etqLado: 36 }],
+    ["df-k3", "df-b3", "df-da", { etiqueta: "MEMBER_OF", ancho: 4, etqLado: 36 }],
   ]);
   const N = d.nodos, A = d.aristas;
   const corte = ["df-k1", "df-k2", "df-k3"];

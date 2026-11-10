@@ -14,7 +14,9 @@
   const svg = document.getElementById("do-lienzo");
   const d = new Diagrama(svg);
   const P = PALETA;
-  const anillo = svgEl("circle", { cx: 800, cy: 500, r: 400, fill: "none", stroke: P.borde, "stroke-width": 3, "stroke-dasharray": "10 12", opacity: 0 }, d.fondo);
+  // El anillo se dibuja como trayecto (igual que un circle de r 400) para que
+  // el detector mida su linea real y no su caja de 800 x 800.
+  const anillo = svgEl("path", { d: "M1200 500 A400 400 0 1 1 400 500 A400 400 0 1 1 1200 500", fill: "none", stroke: P.borde, "stroke-width": 3, "stroke-dasharray": "10 12", opacity: 0 }, d.fondo);
   const nombreDom = svgTexto("TestCompany.Local", { x: 800, y: 75, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.fondo);
   const dc = d.caja("do-dc", 690, 440, 220, 120, { relleno: P.navy, borde: P.navy, texto: ["Controlador", "de dominio"], tinta: "#ffffff", clase: "etq-caja", clase2: "etq-caja" });
   const grupos = [
@@ -30,7 +32,7 @@
   Mov.mostrar(tl, nombreDom, 0.4, 0.5);
   Mov.caja(tl, dc.g, 0.6);
   grupos.forEach((gr, k) => {
-    const a = gr.ang * Math.PI / 180, cx = 800 + Math.cos(a) * 300, cy = 500 + Math.sin(a) * 300;
+    const a = gr.ang * Math.PI / 180, cx = 800 + Math.cos(a) * 280, cy = 500 + Math.sin(a) * 280;
     const t0 = 1.4 + k * 0.55;
     const enlace = d.trazo(`do-l-${gr.id}`, `M${800 + Math.cos(a) * 120} ${500 + Math.sin(a) * 80} L${cx - Math.cos(a) * 60} ${cy - Math.sin(a) * 60}`, { color: P.arista, ancho: 3 });
     enlaces[gr.id] = enlace;
@@ -40,10 +42,10 @@
       const n = d.nodo(`do-${gr.id}-${j}`, cx + (j % 3 - 1) * 40, cy + (Math.floor(j / 3) - 0.5) * 40, { tipo: gr.tipo, r: 14 });
       Mov.aparecer(tl, n, t0 + 0.3 + j * 0.05, { dur: 0.45 });
     }
-    const derecha = Math.cos(a) > 0.3, izquierda = Math.cos(a) < -0.3;
+    // La etiqueta va encima o debajo de su rejilla, siempre dentro del anillo.
+    const arriba = Math.sin(a) < 0;
     const etq = svgTexto(gr.nombre, {
-      x: cx + (derecha ? 80 : izquierda ? -80 : 0), y: cy + (derecha || izquierda ? 9 : 75),
-      "text-anchor": derecha ? "start" : izquierda ? "end" : "middle", class: "etq", opacity: 0,
+      x: cx, y: cy + (arriba ? -52 : 64), "text-anchor": "middle", class: "etq", opacity: 0,
     }, d.capaEncima);
     Mov.mostrar(tl, etq, t0 + 0.55, 0.3);
   });

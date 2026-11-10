@@ -17,16 +17,16 @@
   const P = PALETA;
   d.desde([
     ["cv-pi", 150, 480, { tipo: "User", r: 30, etiqueta: "PiedadFlatley255" }],
-    ["cv-du", 470, 150, { tipo: "Group", r: 22, etiqueta: "DOMAIN USERS" }],
+    ["cv-du", 470, 150, { tipo: "Group", r: 22, etiqueta: "DOMAIN USERS", etqArriba: true }],
     ["cv-hr", 470, 330, { tipo: "Group", r: 22, etiqueta: "HR00037" }],
     ["cv-c1", 470, 790, { tipo: "Computer", r: 22, etiqueta: "COMP00236" }],
-    ["cv-da", 640, 480, { tipo: "hv", r: 34, etiqueta: "DOMAIN ADMINS" }],
+    ["cv-da", 640, 480, { tipo: "hv", r: 34, etiqueta: "DOMAIN ADMINS", etqArriba: true, etqAncla: "end", etqDx: 30 }],
     ["cv-c2", 820, 820, { tipo: "Computer", r: 20, etiqueta: "COMP00001" }],
-    ["cv-c3", 1000, 220, { tipo: "Computer", r: 20, etiqueta: "COMP00012" }],
+    ["cv-c3", 1000, 220, { tipo: "Computer", r: 20, etiqueta: "COMP00012", etqArriba: true }],
     ["cv-fl", 1020, 480, { tipo: "Computer", r: 28, etiqueta: "FLLABDC" }],
     ["cv-edc", 1400, 480, { tipo: "objetivo", r: 38, etiqueta: "ENTERPRISE DOMAIN CONTROLLERS", etqArriba: true }],
   ], [
-    ["cv-1", "cv-pi", "cv-du", {}], ["cv-2", "cv-pi", "cv-hr", {}], ["cv-3", "cv-pi", "cv-c1", { etiqueta: "EXECUTE_DCOM" }],
+    ["cv-1", "cv-pi", "cv-du", {}], ["cv-2", "cv-pi", "cv-hr", {}], ["cv-3", "cv-pi", "cv-c1", { etiqueta: "EXECUTE_DCOM", curva: -150 }],
     ["cv-4", "cv-pi", "cv-da", { etiqueta: "MEMBER_OF", ancho: 4, color: P.navy6 }],
     ["cv-5", "cv-da", "cv-c2", {}], ["cv-6", "cv-da", "cv-c3", {}],
     ["cv-7", "cv-da", "cv-fl", { etiqueta: "ADMIN_TO", ancho: 4, color: P.navy6 }],

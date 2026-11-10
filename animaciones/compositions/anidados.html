@@ -17,8 +17,11 @@
     ["an-u", 170, 520, { tipo: "User", r: 26, etiqueta: "ana" }],
     ["an-g1", 480, 520, { tipo: "Group", r: 24, etiqueta: "SOPORTE" }],
     ["an-g2", 790, 520, { tipo: "Group", r: 24, etiqueta: "IT" }],
-    ["an-g3", 1100, 520, { tipo: "Group", r: 26, etiqueta: "ADMINS SERVIDORES" }],
-    ["an-c1", 1420, 300, { tipo: "Computer", r: 20, etiqueta: "SRV-01" }],
+    // Debajo de ADMINS SERVIDORES llegan las curvas de la cerradura y a su
+    // derecha salen los ADMIN_TO: la etiqueta va arriba y cargada a la izquierda.
+    ["an-g3", 1100, 520, { tipo: "Group", r: 26, etiqueta: "ADMINS SERVIDORES", etqArriba: true, etqAncla: "end", etqDx: 16 }],
+    // ADMIN_TO llega a SRV-01 desde abajo: su etiqueta va arriba, lejos de la flecha.
+    ["an-c1", 1420, 300, { tipo: "Computer", r: 20, etiqueta: "SRV-01", etqArriba: true }],
     ["an-c2", 1440, 520, { tipo: "Computer", r: 20, etiqueta: "SRV-02" }],
     ["an-c3", 1420, 740, { tipo: "Computer", r: 20, etiqueta: "SRV-03" }],
   ], [

@@ -19,7 +19,7 @@
   const pos = { p: [220, 230], q: [220, 480], r: [220, 730], m1: [580, 330], m2: [580, 640],
                 x: [930, 250], y: [930, 720], T: [1300, 480], k: [1300, 850], n: [580, 880] };
   d.desde(Object.entries(pos).map(([k, [x, y]]) => [`in-${k}`, x, y,
-    { color: k === "T" ? P.rojo : gris, r: k === "T" ? 40 : 24, etiqueta: k === "T" ? "objetivo" : null }]));
+    { color: k === "T" ? P.rojo : gris, r: k === "T" ? 40 : 24, etiqueta: k === "T" ? "objetivo" : null, etqArriba: k === "T" }]));
   const aristas = [["p", "m1"], ["q", "m1"], ["q", "m2"], ["r", "m2"], ["m1", "x"], ["m2", "y"], ["x", "T"], ["y", "T"], ["T", "k"], ["n", "k"]];
   aristas.forEach(([a, b]) => d.arista(`in-${a}${b}`, `in-${a}`, `in-${b}`, { ancho: 3, color: P.navy6 }));
   // Las aristas invertidas, en azul, de cada destino hacia su origen.

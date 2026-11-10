@@ -18,7 +18,7 @@
   const equipo = d.caja("se-eq", 560, 330, 480, 330, { relleno: "#ffffff", borde: P.turquesa, grosor: 4, texto: ["COMP00045"], dyTexto: -110, clase: "etq-titulo" });
   const memoria = d.caja("se-mem", 640, 470, 320, 120, { relleno: P.fondo, borde: P.borde, texto: ["memoria del equipo"], dyTexto: -30, clase: "etq-caja2" });
   d.desde([
-    ["se-adm", 220, 290, { tipo: "User", r: 30, etiqueta: "PingFrankel165 (admin)" }],
+    ["se-adm", 220, 290, { tipo: "User", r: 30, etiqueta: "PingFrankel165 (admin)", etqArriba: true }],
     ["se-at", 220, 760, { color: P.navy, r: 30, etiqueta: "atacante (CaronOstrye16)" }],
     ["se-da", 1380, 500, { tipo: "objetivo", r: 40, etiqueta: "DOMAIN ADMINS", etqArriba: true }],
   ]);
@@ -27,8 +27,8 @@
   const salida = d.trazo("se-sa", "M800 560 C700 700 450 760 255 760", { color: P.naranja, ancho: 4 });
   const escala = d.trazo("se-es", "M255 730 C700 820 1150 700 1345 525", { color: P.naranja, ancho: 6 });
   const cred = d.ficha("se-cred", { ancho: 150, color: P.ambar, texto: "credencial" });
-  const etqIn = svgTexto("inicia sesión (HAS_SESSION)", { x: 470, y: 400, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
-  const etqCt = svgTexto("controla el equipo (EXECUTE_DCOM)", { x: 420, y: 700, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+  const etqIn = svgTexto("inicia sesión (HAS_SESSION)", { x: 380, y: 455, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
+  const etqCt = svgTexto("controla el equipo (EXECUTE_DCOM)", { x: 310, y: 600, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
   const etqEs = svgTexto("actúa como el administrador (MEMBER_OF)", { x: 950, y: 820, "text-anchor": "middle", class: "etq-ar", opacity: 0 }, d.capaEncima);
 
   const tl = gsap.timeline({ paused: true });

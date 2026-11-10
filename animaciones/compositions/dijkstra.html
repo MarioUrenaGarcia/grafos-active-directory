@@ -30,17 +30,19 @@
   ]);
   const N = k => d.nodos[`dj-${k}`], A = k => d.aristas[`dj-${k}`];
   // Insignias de distancia: cada valor es un texto propio que aparece en su turno.
-  const insignia = (k, valores) => {
+  // [hx, hy] elige la esquina del nodo donde va la insignia: la que no cruza ninguna arista.
+  const insignia = (k, valores, [hx, hy] = [1, -1]) => {
     const n = N(k);
+    const cx = n.x + hx * (n.r + 32), cy = n.y + hy * (n.r + 20);
     const g = svgEl("g", {}, d.capaEncima);
-    svgEl("rect", { x: n.x + n.r - 6, y: n.y - n.r - 40, width: 76, height: 40, rx: 20, fill: P.navy }, g);
+    svgEl("rect", { x: cx - 38, y: cy - 20, width: 76, height: 40, rx: 20, fill: P.navy }, g);
     return valores.map(v => {
-      const t = svgTexto(String(v), { x: n.x + n.r + 32, y: n.y - n.r - 12, "text-anchor": "middle", class: "etq-caja", opacity: 0 }, g);
+      const t = svgTexto(String(v), { x: cx, y: cy + 8, "text-anchor": "middle", class: "etq-caja", opacity: 0 }, g);
       t.style.fill = "#ffffff";
       return t;
     }).concat([g]);
   };
-  const dO = insignia("O", [0]), dG = insignia("G", [INF, 1]), dC = insignia("C", [INF, 3]), dT = insignia("T", [INF, 4, 2]);
+  const dO = insignia("O", [0], [-1, -1]), dG = insignia("G", [INF, 1]), dC = insignia("C", [INF, 3], [1, 1]), dT = insignia("T", [INF, 4, 2]);
   [dO, dG, dC, dT].forEach(v => v[v.length - 1].setAttribute("opacity", 0));
   // Estados del monticulo (pares distancia, nodo), del frente al final.
   const estados = [

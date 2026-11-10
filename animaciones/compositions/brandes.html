@@ -20,6 +20,8 @@
   d.desde(izq.concat(der, [["br-x", 800, 480, { tipo: "Computer", r: 22, etiqueta: "COMP00083", etqArriba: true }]]),
     izq.map(([id]) => [`${id}x`, id, "br-x", {}]).concat(der.map(([id]) => [`br-x${id}`, "br-x", id, {}])));
   const N = d.nodos, A = d.aristas;
+  // El puente crece hasta radio 22 + 4 * 9: su nombre va sobre ese tamano final.
+  N["br-x"].etq.setAttribute("y", 480 - (22 + 4 * 9) - 16);
   const valor = [0, 12, 24, 48, 76].map((v, i) => {
     const t = svgTexto(`intermediación = ${v}`, { x: 800, y: 600, "text-anchor": "middle", class: "etq-titulo", opacity: 0 }, d.capaEncima);
     return t;

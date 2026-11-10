@@ -19,7 +19,9 @@
   const pos = { S: [170, 430], A: [470, 200], B: [470, 430], C: [470, 660], D: [790, 130], E: [790, 330],
                 F: [790, 540], G: [790, 720], T: [1110, 330], H: [1110, 620] };
   d.desde(Object.entries(pos).map(([k, [x, y]]) => [`bf-${k}`, x, y,
-    { color: k === "T" ? P.rojo : gris, r: k === "T" ? 34 : 26, etiqueta: k === "S" ? "S (origen)" : k === "T" ? "T (objetivo)" : k }]),
+    { color: k === "T" ? P.rojo : gris, r: k === "T" ? 34 : 26, etiqueta: k === "S" ? "S (origen)" : k === "T" ? "T (objetivo)" : k,
+      // La etiqueta larga de S se corre a la izquierda para librar la arista que baja hacia C.
+      etqDx: k === "S" ? -44 : 0 }]),
   [["S", "A"], ["S", "B"], ["S", "C"], ["A", "D"], ["A", "E"], ["B", "E"], ["B", "F"], ["C", "G"], ["E", "T"], ["F", "H"], ["G", "H"]]
     .map(([a, b]) => [`bf-${a}${b}`, `bf-${a}`, `bf-${b}`, { ancho: 3 }]));
   const N = k => d.nodos[`bf-${k}`], A = (a, b) => d.aristas[`bf-${a}${b}`];
@@ -27,7 +29,7 @@
     svgTexto(t, { x, y: 60, "text-anchor": "middle", class: "etq-zona", opacity: 0 }, d.fondo));
   const orden = ["S", "A", "B", "C", "D", "E", "F", "G", "T"];
   const cola = orden.map((k, i) => d.caja(`bf-q${i}`, 200 + i * 132, 845, 110, 80, { relleno: "#ffffff", borde: P.azul, grosor: 3, texto: [k], dyTexto: 9 }));
-  const rotulo = svgTexto("cola (orden de descubrimiento)", { x: 200, y: 822, class: "etq-ar", opacity: 0 }, d.fondo);
+  const rotulo = svgTexto("cola (orden de descubrimiento)", { x: 200, y: 800, class: "etq-ar", opacity: 0 }, d.fondo);
   const frente = svgEl("polygon", { points: "0,0 -14,-22 14,-22", fill: P.naranja, opacity: 0 }, d.capaEncima);
 
   const tl = gsap.timeline({ paused: true });

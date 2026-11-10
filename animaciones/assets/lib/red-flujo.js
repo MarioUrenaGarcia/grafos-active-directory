@@ -18,7 +18,9 @@
       ["b1", 900, 240, { tipo: "User", r: 22, etiqueta: "b1", etqArriba: true }],
       ["b2", 900, 480, { tipo: "User", r: 22, etiqueta: "b2", etqArriba: true }],
       ["b3", 900, 720, { tipo: "User", r: 22, etiqueta: "b3" }],
-      ["DA", 1180, 480, { tipo: "objetivo", r: 36, etiqueta: "DOMAIN ADMINS", etqArriba: true }],
+      // La etiqueta de DA arranca a la derecha de su centro: centrada, la cruzaba
+      // la flecha diagonal que llega desde b1.
+      ["DA", 1180, 480, { tipo: "objetivo", r: 36, etiqueta: "DOMAIN ADMINS", etqArriba: true, etqDx: -20, etqAncla: "start" }],
       ["T", 1440, 480, { color: "#11263f", r: 30, etiqueta: "T", etqArriba: true }],
     ],
     // [origen, destino, capacidad, tipo de arista]

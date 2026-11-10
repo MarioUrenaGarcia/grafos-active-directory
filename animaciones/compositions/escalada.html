@@ -13,9 +13,11 @@
   // hasta DOMAIN ADMINS, con la OU, la GPO y el grupo que rodean a sus objetos.
   const d = new Diagrama(document.getElementById("es-lienzo"));
   const P = PALETA;
-  const caron = d.nodo("es-caron", 210, 500, { tipo: "User", r: 22, etiqueta: "CaronOstrye16" });
+  // Las dos pertenencias a DOMAIN USERS salen por debajo de los usuarios, asi
+  // que sus nombres van arriba para que las curvas no los crucen.
+  const caron = d.nodo("es-caron", 210, 500, { tipo: "User", r: 22, etiqueta: "CaronOstrye16", etqArriba: true });
   const comp = d.nodo("es-comp", 600, 500, { tipo: "Computer", r: 22, etiqueta: "COMP00045" });
-  const ping = d.nodo("es-ping", 990, 500, { tipo: "User", r: 22, etiqueta: "PingFrankel165" });
+  const ping = d.nodo("es-ping", 990, 500, { tipo: "User", r: 22, etiqueta: "PingFrankel165", etqArriba: true });
   const da = d.nodo("es-da", 1370, 500, { tipo: "objetivo", r: 34, etiqueta: "DOMAIN ADMINS" });
   const ou = d.nodo("es-ou", 600, 200, { tipo: "OU", r: 18, etiqueta: "NV_COMPUTERS", etqArriba: true });
   const gpo = d.nodo("es-gpo", 260, 200, { tipo: "GPO", r: 18, etiqueta: "GPO_13", etqArriba: true });

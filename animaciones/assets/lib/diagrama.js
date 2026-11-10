@@ -20,6 +20,10 @@
     Domain: C.gris, objetivo: C.rojo, hv: C.naranja,
   };
 
+  // Contorno blanco detras del texto de las etiquetas: si una linea pasa por
+  // detras, se interrumpe alrededor de las letras y la etiqueta sigue legible.
+  const HALO = { "paint-order": "stroke", stroke: C.blanco, "stroke-width": 6, "stroke-linejoin": "round" };
+
   function el(tag, attrs, padre) {
     const e = document.createElementNS(NS, tag);
     for (const k in attrs) e.setAttribute(k, attrs[k]);
@@ -59,7 +63,7 @@
         const dy = o.etqArriba ? -(r + 14) : r + 26;
         etq = texto(o.etiqueta, {
           x: x + (o.etqDx || 0), y: y + dy, "text-anchor": o.etqAncla || "middle",
-          class: o.etqClase || "etq", opacity: 0,
+          class: o.etqClase || "etq", opacity: 0, ...HALO,
         }, g);
       }
       const n = { id, g, c, halo, etq, x, y, r, color };
@@ -103,11 +107,19 @@
       if (o.etiqueta) {
         const mx = curva ? 0.25 * sx + 0.5 * cx + 0.25 * ex : (sx + ex) / 2;
         const my = curva ? 0.25 * sy + 0.5 * cy + 0.25 * ey : (sy + ey) / 2;
-        const off = o.etqLado === undefined ? 18 : o.etqLado;
         etq = texto(o.etiqueta, {
-          x: mx - dy / L * off, y: my + dx / L * off + 5, "text-anchor": "middle",
-          class: o.etqClase || "etq-ar", opacity: 0,
+          x: mx, y: my, "text-anchor": "middle",
+          class: o.etqClase || "etq-ar", opacity: 0, ...HALO,
         }, g);
+        // La etiqueta se aleja de la arista en perpendicular lo suficiente para
+        // que su caja no toque la linea: en una arista diagonal una etiqueta
+        // ancha necesita mas distancia que en una horizontal.
+        const nx = -dy / L, ny = dx / L, caja = etq.getBBox();
+        const base = o.etqLado === undefined ? 18 : o.etqLado;
+        const minimo = 8 + Math.abs(nx) * caja.width / 2 + Math.abs(ny) * caja.height / 2;
+        const off = (base < 0 ? -1 : 1) * Math.max(Math.abs(base), minimo);
+        etq.setAttribute("x", mx + nx * off);
+        etq.setAttribute("y", my + ny * off + 5);
       }
       const ar = { id, g, p, flecha, etq, largo, color, a: A, b: B };
       this.aristas[id] = ar;

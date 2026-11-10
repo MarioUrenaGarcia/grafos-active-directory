@@ -20,22 +20,26 @@
     svgTexto(nombre, { x: x + w / 2, y: 62, "text-anchor": "middle", class: "etq-zona" }, g);
     return g;
   });
+  // Cada etiqueta va del lado del nodo por el que no entra ni sale ninguna
+  // arista: arriba en los nodos altos del zigzag, abajo en los bajos y en
+  // diagonal (ancla "end") cuando las aristas ocupan los dos lados a la derecha.
   d.desde([
-    ["ci-u1", 140, 560, { tipo: "User", r: 26, etiqueta: "usuario común" }],
-    ["ci-w1", 330, 380, { tipo: "Computer", r: 22, etiqueta: "PC-12" }],
-    ["ci-la", 420, 640, { tipo: "User", r: 22, etiqueta: "soporte.local" }],
-    ["ci-w2", 230, 760, { tipo: "Computer", r: 18 }],
-    ["ci-g1", 680, 640, { tipo: "Group", r: 24, etiqueta: "IT" }],
-    ["ci-s1", 840, 380, { tipo: "Computer", r: 24, etiqueta: "SRV-APP" }],
+    ["ci-u1", 200, 560, { tipo: "User", r: 26, etiqueta: "usuario común", etqArriba: true, etqAncla: "end", etqDx: 16 }],
+    ["ci-w1", 370, 340, { tipo: "Computer", r: 22, etiqueta: "PC-12", etqArriba: true }],
+    ["ci-la", 430, 660, { tipo: "User", r: 22, etiqueta: "soporte.local" }],
+    ["ci-w2", 230, 700, { tipo: "Computer", r: 18 }],
+    ["ci-g1", 680, 660, { tipo: "Group", r: 24, etiqueta: "IT" }],
+    ["ci-s1", 840, 380, { tipo: "Computer", r: 24, etiqueta: "SRV-APP", etqArriba: true }],
     ["ci-s2", 900, 720, { tipo: "Computer", r: 18 }],
-    ["ci-a1", 1000, 520, { tipo: "User", r: 24, etiqueta: "admin.dominio" }],
-    ["ci-da", 1300, 520, { tipo: "objetivo", r: 38, etiqueta: "DOMAIN ADMINS" }],
-    ["ci-dc", 1470, 300, { tipo: "hv", r: 26, etiqueta: "controlador" }],
+    ["ci-a1", 990, 420, { tipo: "User", r: 24, etiqueta: "admin.dominio", etqArriba: true }],
+    ["ci-da", 1300, 520, { tipo: "objetivo", r: 38, etiqueta: "DOMAIN ADMINS", etqAncla: "end", etqDx: 26 }],
+    ["ci-dc", 1470, 300, { tipo: "hv", r: 26, etiqueta: "controlador", etqArriba: true }],
     ["ci-dom", 1470, 740, { tipo: "hv", r: 26, etiqueta: "dominio" }],
   ], [
-    ["ci-e1", "ci-u1", "ci-w1", { etiqueta: "CAN_RDP", ancho: 4 }],
-    ["ci-e2", "ci-w1", "ci-la", { etiqueta: "HAS_SESSION", ancho: 4 }],
-    ["ci-e3", "ci-la", "ci-g1", { etiqueta: "MEMBER_OF", ancho: 4 }],
+    // Las etiquetas del primer triangulo van por fuera para no apretarse adentro.
+    ["ci-e1", "ci-u1", "ci-w1", { etiqueta: "CAN_RDP", ancho: 4, etqLado: -18 }],
+    ["ci-e2", "ci-w1", "ci-la", { etiqueta: "HAS_SESSION", ancho: 4, etqLado: -18 }],
+    ["ci-e3", "ci-la", "ci-g1", { etiqueta: "MEMBER_OF", ancho: 4, etqLado: -18 }],
     ["ci-e4", "ci-g1", "ci-s1", { etiqueta: "ADMIN_TO", ancho: 4 }],
     ["ci-e5", "ci-s1", "ci-a1", { etiqueta: "HAS_SESSION", ancho: 4 }],
     ["ci-e6", "ci-a1", "ci-da", { etiqueta: "MEMBER_OF", ancho: 4 }],

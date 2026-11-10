@@ -21,11 +21,11 @@
   const t1 = d.trazo("ke-t1", "M240 590 C240 380 420 220 640 190", { color: P.borde, ancho: 3 });
   const t2 = d.trazo("ke-t2", "M680 270 C640 420 480 540 330 590", { color: P.borde, ancho: 3 });
   const t3 = d.trazo("ke-t3", "M370 620 C560 560 700 420 760 270", { color: P.borde, ancho: 3 });
-  const t4 = d.trazo("ke-t4", "M860 270 C860 520 640 660 370 690", { color: P.borde, ancho: 3 });
+  const t4 = d.trazo("ke-t4", "M860 270 C940 540 680 680 370 690", { color: P.borde, ancho: 3 });
   const t5 = d.trazo("ke-t5", "M370 660 C700 700 950 700 1220 660", { color: P.borde, ancho: 3 });
   const etiquetas = [
     ["1. Pide un TGT", 300, 300], ["2. Recibe el TGT", 470, 420],
-    ["3. Canjea el TGT", 760, 470], ["4. Ticket de servicio", 880, 560], ["5. Presenta el ticket", 800, 625],
+    ["3. Canjea el TGT", 745, 470], ["4. Ticket de servicio", 920, 570], ["5. Presenta el ticket", 1000, 645],
   ].map(([txt, x, y]) => svgTexto(txt, { x, y, "text-anchor": "middle", class: "etq-chica", opacity: 0 }, d.capaEncima));
   const fPide = d.ficha("ke-f1", { ancho: 150, color: P.fondo, texto: "credencial" });
   const fTgt = d.ficha("ke-f2", { ancho: 80, color: P.ambar, texto: "TGT" });
